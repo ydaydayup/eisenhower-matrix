@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
+import { LinkComponent as Link } from "@/components/ui/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -49,12 +49,7 @@ export default function LoginPage() {
           description: "欢迎回来！",
         })
 
-        // 使用更强制的重定向方法
-        // 1. 先等待一段时间确保会话已建立
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        // 2. 使用 window.location 进行强制重定向
-        window.location.href = "/dashboard"
+        router.push("/dashboard")
       }
     } catch (err) {
       console.error("Login error:", err)

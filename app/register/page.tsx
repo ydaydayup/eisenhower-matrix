@@ -86,12 +86,7 @@ export default function RegisterPage() {
           description: "您已成功注册并登录",
         })
 
-        // 使用更强制的重定向方法
-        // 1. 先等待一段时间确保会话已建立
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        // 2. 使用 window.location 进行强制重定向
-        window.location.href = "/dashboard"
+        router.push("/dashboard")
       }
     } catch (err) {
       console.error("Registration error:", err)

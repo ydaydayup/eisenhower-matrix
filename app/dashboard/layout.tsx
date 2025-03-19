@@ -1,7 +1,7 @@
 import type React from "react"
 import { Sidebar } from "@/components/sidebar"
 import { redirect } from "next/navigation"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 
 export default async function DashboardLayout({
   children,
@@ -9,7 +9,7 @@ export default async function DashboardLayout({
   children: React.ReactNode
 }) {
   // 使用服务器端 Supabase 客户端
-  const supabase = createServerSupabaseClient()
+  const supabase = await createClient()
 
   try {
     // 获取会话
