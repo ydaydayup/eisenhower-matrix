@@ -508,9 +508,24 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {quadrants.map((quadrant) => (
               <div key={quadrant.id} className={cn("border rounded-lg p-4", quadrant.bgColor, quadrant.borderColor)}>
-                <div className="mb-2">
-                  <h2 className="text-lg font-bold">{quadrant.title}</h2>
-                  <p className="text-sm text-gray-600">{quadrant.subtitle}</p>
+                <div className="mb-2 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-lg font-bold">{quadrant.title}</h2>
+                    <p className="text-sm text-gray-600">{quadrant.subtitle}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setTaskForm({
+                        ...taskForm,
+                        quadrant: quadrant.id as 1 | 2 | 3 | 4
+                      });
+                      setIsEditing(true);
+                    }}
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                  </Button>
                 </div>
                 <div className="text-right text-sm mb-2">{getQuadrantTasks(quadrant.id).length} 项</div>
 
