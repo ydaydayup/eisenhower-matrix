@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { OpenAIStream } from '@/lib/openai-stream'
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +24,8 @@ export async function POST(request: Request) {
 3. 所需资源：
 4. 潜在风险：
 5. 时间建议：`
-        }]
+        }],
+        stream: true // 启用流式输出
       })
     })
 
@@ -31,10 +33,12 @@ export async function POST(request: Request) {
       throw new Error('API request failed')
     }
 
-    const data = await response.json()
-    const analysis = data.choices[0].message.content
+    // 创建流式响应
+    const stream = OpenAIStream(response)
+    
+    // 返回流式响应
+    return new Response(stream)
 
-    return NextResponse.json({ analysis })
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(

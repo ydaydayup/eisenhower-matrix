@@ -386,11 +386,16 @@ export default function Dashboard() {
     return tasks.filter((task) => !task.completed)
   }
 
-  // 添加生成任务分析的函数
+  // 修改生成任务分析的函数
   const generateTaskAnalysis = async (taskTitle: string) => {
     if (!taskTitle.trim()) return
 
     setIsGeneratingNotes(true)
+    setTaskForm(prev => ({
+      ...prev,
+      notes: '' // 清空现有笔记
+    }))
+
     try {
       const response = await fetch('/api/analyze-task', {
         method: 'POST',
@@ -401,12 +406,27 @@ export default function Dashboard() {
       })
 
       if (!response.ok) throw new Error('Failed to generate analysis')
+      if (!response.body) throw new Error('Response body is null')
 
-      const data = await response.json()
-      setTaskForm(prev => ({
-        ...prev,
-        notes: data.analysis
-      }))
+      // 创建 ReadableStream 读取器
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulatedNotes = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        // 解码新的文本块并累加
+        const text = decoder.decode(value)
+        accumulatedNotes += text
+
+        // 更新表单状态
+        setTaskForm(prev => ({
+          ...prev,
+          notes: accumulatedNotes
+        }))
+      }
     } catch (error) {
       console.error('Error generating task analysis:', error)
       toast({
@@ -734,7 +754,6 @@ export default function Dashboard() {
                 <Input
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                  onBlur={() => generateTaskAnalysis(taskForm.title)}
                   placeholder="输入任务名称"
                   className="w-full h-12 text-lg"
                 />
@@ -806,7 +825,36 @@ export default function Dashboard() {
 
               {/* 备注区域 - 独占一行，更大的空间 */}
               <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">备注</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium">备注</label>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => generateTaskAnalysis(taskForm.title)}
+                    disabled={!taskForm.title.trim() || isGeneratingNotes}
+                    className="flex items-center gap-2"
+                  >
+                    {isGeneratingNotes ? (
+                      <>
+                        <div className="h-3 w-3 animate-spin rounded-full border-b-2 border-primary" />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                          <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                        </svg>
+                        生成分析
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <div className="relative h-full">
                   <Textarea
                     value={taskForm.notes}
@@ -818,14 +866,6 @@ export default function Dashboard() {
                     )}
                     disabled={isGeneratingNotes}
                   />
-                  {isGeneratingNotes && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-background/50">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                        <span className="text-sm text-muted-foreground">正在生成任务分析...</span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
