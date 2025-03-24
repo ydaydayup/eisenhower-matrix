@@ -14,10 +14,11 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         model: 'moonshot-v1-8k',
-        messages: [{
+        messages: [
+          {"role": "system", "content": "你是一个任务分析与规划专家"},
+          {
           role: 'user',
           content: `请分析以下任务并生成详细的执行计划：${title}
-          
 请按照以下格式输出：
 1. 任务目标：
 2. 关键步骤：

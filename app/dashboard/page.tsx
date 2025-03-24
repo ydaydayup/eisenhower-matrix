@@ -826,7 +826,7 @@ export default function Dashboard() {
               {/* 备注区域 - 独占一行，更大的空间 */}
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium">详情</label>
+                  <label className="text-sm font-medium">任务详情</label>
                   <Button 
                     variant="outline" 
                     size="sm"
@@ -850,7 +850,7 @@ export default function Dashboard() {
                           <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
                           <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                         </svg>
-                        智能生成
+                        智能分析
                       </>
                     )}
                   </Button>
