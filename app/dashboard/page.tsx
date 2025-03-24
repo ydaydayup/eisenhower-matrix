@@ -28,6 +28,8 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   // 在 Dashboard 函数内部添加视图状态
   const [viewType, setViewType] = useState<ViewType>("quadrant")
+  // 添加生成笔记的加载状态
+  const [isGeneratingNotes, setIsGeneratingNotes] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -384,6 +386,39 @@ export default function Dashboard() {
     return tasks.filter((task) => !task.completed)
   }
 
+  // 添加生成任务分析的函数
+  const generateTaskAnalysis = async (taskTitle: string) => {
+    if (!taskTitle.trim()) return
+
+    setIsGeneratingNotes(true)
+    try {
+      const response = await fetch('/api/analyze-task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: taskTitle }),
+      })
+
+      if (!response.ok) throw new Error('Failed to generate analysis')
+
+      const data = await response.json()
+      setTaskForm(prev => ({
+        ...prev,
+        notes: data.analysis
+      }))
+    } catch (error) {
+      console.error('Error generating task analysis:', error)
+      toast({
+        title: "分析生成失败",
+        description: "无法生成任务分析，请稍后重试",
+        variant: "destructive",
+      })
+    } finally {
+      setIsGeneratingNotes(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -688,75 +723,114 @@ export default function Dashboard() {
             }
           }}
         >
-          <DialogContent>
+          <DialogContent className="sm:max-w-[850px] h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>{editingTask ? "编辑任务" : "添加任务"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">任务名称</label>
+            <div className="space-y-6 flex-1 overflow-y-auto pr-2">
+              {/* 任务名称 - 独占一行 */}
+              <div className="col-span-full">
+                <label className="text-sm font-medium mb-2 block">任务名称</label>
                 <Input
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                  onBlur={() => generateTaskAnalysis(taskForm.title)}
                   placeholder="输入任务名称"
+                  className="w-full h-12 text-lg"
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium">优先级（象限）</label>
-                <Select
-                  value={taskForm.quadrant.toString()}
-                  onValueChange={(value) =>
-                    setTaskForm({ ...taskForm, quadrant: Number.parseInt(value) as 1 | 2 | 3 | 4 })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="选择象限" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">象限一 - 紧急且重要</SelectItem>
-                    <SelectItem value="2">象限二 - 重要不紧急</SelectItem>
-                    <SelectItem value="3">象限三 - 紧急不重要</SelectItem>
-                    <SelectItem value="4">象限四 - 不紧急不重要</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* 优先级、完成时间和标签 - 共占一行 */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">优先级（象限）</label>
+                  <Select
+                    value={taskForm.quadrant.toString()}
+                    onValueChange={(value) =>
+                      setTaskForm({ ...taskForm, quadrant: Number.parseInt(value) as 1 | 2 | 3 | 4 })
+                    }
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="选择象限" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">象限一 - 紧急且重要</SelectItem>
+                      <SelectItem value="2">象限二 - 重要不紧急</SelectItem>
+                      <SelectItem value="3">象限三 - 紧急不重要</SelectItem>
+                      <SelectItem value="4">象限四 - 不紧急不重要</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div>
-                <label className="text-sm font-medium">预计完成时间</label>
-                <Input
-                  type="date"
-                  value={taskForm.due_date}
-                  onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                />
-              </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">预计完成时间</label>
+                  <Input
+                    type="date"
+                    value={taskForm.due_date}
+                    onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
+                    className="h-12"
+                  />
+                </div>
 
-              <div>
-                <label className="text-sm font-medium">标签</label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant={taskForm.tags.includes(tag.name) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => toggleTaskTag(tag.name)}
-                    >
-                      {tag.name}
-                    </Badge>
-                  ))}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">标签</label>
+                  <Select
+                    value={taskForm.tags.join(",")}
+                    onValueChange={(value) => setTaskForm({ ...taskForm, tags: value ? value.split(",") : [] })}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="选择标签" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.name}>
+                          {tag.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {taskForm.tags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="cursor-pointer px-3 py-1 text-sm"
+                        onClick={() => toggleTaskTag(tag)}
+                      >
+                        {tag} ×
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">备注</label>
-                <Textarea
-                  value={taskForm.notes}
-                  onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
-                  placeholder="输入备注信息"
-                />
+              {/* 备注区域 - 独占一行，更大的空间 */}
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">备注</label>
+                <div className="relative h-full">
+                  <Textarea
+                    value={taskForm.notes}
+                    onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
+                    placeholder="输入备注信息"
+                    className={cn(
+                      "min-h-[300px] h-full resize-none text-base leading-relaxed p-4",
+                      isGeneratingNotes && "opacity-50"
+                    )}
+                    disabled={isGeneratingNotes}
+                  />
+                  {isGeneratingNotes && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <span className="text-sm text-muted-foreground">正在生成任务分析...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <DialogFooter>
+
+            <DialogFooter className="mt-8 py-4 border-t">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -764,10 +838,13 @@ export default function Dashboard() {
                   setEditingTask(null)
                   resetTaskForm()
                 }}
+                className="px-6"
               >
                 取消
               </Button>
-              <Button onClick={editingTask ? saveEditedTask : addTask}>{editingTask ? "保存" : "添加"}</Button>
+              <Button onClick={editingTask ? saveEditedTask : addTask} className="px-6">
+                {editingTask ? "保存" : "添加"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
