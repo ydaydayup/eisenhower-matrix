@@ -824,7 +824,7 @@ export default function Dashboard() {
               </div>
 
               {/* 备注区域 - 独占一行，更大的空间 */}
-              <div className="flex-1">
+              <div className="flex-1 h-full">
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-medium">任务详情</label>
                   <Button 
