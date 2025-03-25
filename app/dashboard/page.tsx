@@ -21,15 +21,13 @@ type ViewType = "quadrant" | "category" | "simple"
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [tags, setTags] = useState<Tag[]>([])
-  const [newTask, setNewTask] = useState("")
-  const [selectedQuadrant, setSelectedQuadrant] = useState<1 | 2 | 3 | 4>(1)
-  const [showCompleted, setShowCompleted] = useState(false)
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   // 在 Dashboard 函数内部添加视图状态
   const [viewType, setViewType] = useState<ViewType>("quadrant")
   // 添加生成笔记的加载状态
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -113,6 +111,7 @@ export default function Dashboard() {
       if (createdTask) {
         setTasks([createdTask, ...tasks])
         resetTaskForm()
+        setIsEditing(false)
       }
     } catch (error) {
       console.error("Error adding task:", error)
@@ -302,36 +301,6 @@ export default function Dashboard() {
     return tasks.filter((task) => task.completed)
   }
 
-  // 快速添加任务
-  const quickAddTask = async () => {
-    if (!user || newTask.trim() === "") return
-
-    try {
-      const quickTaskData = {
-        user_id: user.id,
-        title: newTask,
-        quadrant: selectedQuadrant,
-        due_date: null,
-        tags: [],
-        notes: "",
-        completed: false,
-      }
-
-      const createdTask = await createTask(quickTaskData)
-      if (createdTask) {
-        setTasks([createdTask, ...tasks])
-        setNewTask("")
-      }
-    } catch (error) {
-      console.error("Error adding quick task:", error)
-      toast({
-        title: "添加失败",
-        description: "无法添加任务，请稍后再试",
-        variant: "destructive",
-      })
-    }
-  }
-
   // 象限配置
   const quadrants = [
     {
@@ -458,38 +427,12 @@ export default function Dashboard() {
       <main className="container mx-auto p-4 max-w-6xl">
         <div className="flex justify-between items-center my-6">
           <h1 className="text-2xl font-bold">待办事项</h1>
-        </div>
-
-        {/* 快速添加任务 */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-6">
-          <Input
-            placeholder="添加新任务..."
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") quickAddTask()
-            }}
-            className="flex-1"
-          />
-          <div className="flex gap-2">
-            <Select
-              value={selectedQuadrant.toString()}
-              onValueChange={(value) => setSelectedQuadrant(Number.parseInt(value) as 1 | 2 | 3 | 4)}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="选择象限" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">象限一 - 紧急且重要</SelectItem>
-                <SelectItem value="2">象限二 - 重要不紧急</SelectItem>
-                <SelectItem value="3">象限三 - 紧急不重要</SelectItem>
-                <SelectItem value="4">象限四 - 不紧急不重要</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={quickAddTask} className="whitespace-nowrap">
-              <PlusCircle className="mr-2 h-4 w-4" /> 添加
-            </Button>
-          </div>
+          <Button onClick={() => {
+            resetTaskForm();
+            setIsEditing(true);
+          }} className="whitespace-nowrap">
+            <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
+          </Button>
         </div>
 
         {/* 视图切换按钮 */}
@@ -808,18 +751,6 @@ export default function Dashboard() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {taskForm.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="cursor-pointer px-3 py-1 text-sm"
-                        onClick={() => toggleTaskTag(tag)}
-                      >
-                        {tag} ×
-                      </Badge>
-                    ))}
-                  </div>
                 </div>
               </div>
 
