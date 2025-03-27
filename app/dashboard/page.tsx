@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { PlusCircle, Edit, Trash2, Check, LucideTag } from "lucide-react"
+import { useState, useEffect, JSX } from "react"
+import { PlusCircle, Edit, Trash2, Check, LucideTag, ListTree } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast"
 import { getUserSession } from "@/lib/auth"
 import { type Task, getUserTasks, createTask, updateTask, deleteTask } from "@/lib/tasks"
 import { type Tag, getUserTags, createTag, deleteTag } from "@/lib/tags"
+import { format } from "date-fns"
+import { SubtaskSidebar } from "@/components/SubtaskSidebar"
 
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
@@ -21,15 +23,13 @@ type ViewType = "quadrant" | "category" | "simple"
 export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [tags, setTags] = useState<Tag[]>([])
-  const [newTask, setNewTask] = useState("")
-  const [selectedQuadrant, setSelectedQuadrant] = useState<1 | 2 | 3 | 4>(1)
-  const [showCompleted, setShowCompleted] = useState(false)
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   // 在 Dashboard 函数内部添加视图状态
   const [viewType, setViewType] = useState<ViewType>("quadrant")
   // 添加生成笔记的加载状态
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -50,6 +50,9 @@ export default function Dashboard() {
     tags: [] as string[],
     notes: "",
   })
+
+  const [subtaskOpen, setSubtaskOpen] = useState(false)
+  const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState<Task | null>(null)
 
   // 获取用户会话
   useEffect(() => {
@@ -113,6 +116,7 @@ export default function Dashboard() {
       if (createdTask) {
         setTasks([createdTask, ...tasks])
         resetTaskForm()
+        setIsEditing(false)
       }
     } catch (error) {
       console.error("Error adding task:", error)
@@ -153,6 +157,7 @@ export default function Dashboard() {
     if (!editingTask || taskForm.title.trim() === "") return
 
     try {
+      console.log("待办页面保存任务，截止日期:", taskForm.due_date)
       const updatedTask = await updateTask(editingTask.id, {
         title: taskForm.title,
         quadrant: taskForm.quadrant,
@@ -162,6 +167,7 @@ export default function Dashboard() {
       })
 
       if (updatedTask) {
+        console.log("更新成功后的日期:", updatedTask.due_date)
         setTasks(tasks.map((task) => (task.id === editingTask.id ? updatedTask : task)))
       }
     } catch (error) {
@@ -302,36 +308,6 @@ export default function Dashboard() {
     return tasks.filter((task) => task.completed)
   }
 
-  // 快速添加任务
-  const quickAddTask = async () => {
-    if (!user || newTask.trim() === "") return
-
-    try {
-      const quickTaskData = {
-        user_id: user.id,
-        title: newTask,
-        quadrant: selectedQuadrant,
-        due_date: null,
-        tags: [],
-        notes: "",
-        completed: false,
-      }
-
-      const createdTask = await createTask(quickTaskData)
-      if (createdTask) {
-        setTasks([createdTask, ...tasks])
-        setNewTask("")
-      }
-    } catch (error) {
-      console.error("Error adding quick task:", error)
-      toast({
-        title: "添加失败",
-        description: "无法添加任务，请稍后再试",
-        variant: "destructive",
-      })
-    }
-  }
-
   // 象限配置
   const quadrants = [
     {
@@ -439,6 +415,123 @@ export default function Dashboard() {
     }
   }
 
+  // 更新任务表单相关的函数
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = e.target.value
+    // 如果有时间，保留原有时间；没有则使用默认时间
+    let timeString = '00:00'
+    if (taskForm.due_date) {
+      try {
+        const dateObj = new Date(taskForm.due_date)
+        if (!isNaN(dateObj.getTime())) {
+          timeString = dateObj.toLocaleTimeString('en-US', { 
+            hour12: false,
+            hour: '2-digit', 
+            minute: '2-digit'
+          })
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error)
+      }
+    }
+    setTaskForm({ ...taskForm, due_date: date ? `${date}T${timeString}` : '' })
+  }
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = e.target.value
+    // 如果有日期，保留原有日期；没有则使用当前日期
+    let dateString = format(new Date(), 'yyyy-MM-dd')
+    if (taskForm.due_date) {
+      try {
+        const dateObj = new Date(taskForm.due_date)
+        if (!isNaN(dateObj.getTime())) {
+          dateString = format(dateObj, 'yyyy-MM-dd')
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error)
+      }
+    }
+    setTaskForm({ ...taskForm, due_date: `${dateString}T${time}` })
+  }
+
+  const getCurrentDate = () => {
+    if (!taskForm.due_date) return ''
+    try {
+      const dateObj = new Date(taskForm.due_date)
+      if (!isNaN(dateObj.getTime())) {
+        return format(dateObj, 'yyyy-MM-dd')
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error)
+    }
+    return ''
+  }
+
+  const getCurrentTime = () => {
+    if (!taskForm.due_date) return ''
+    try {
+      const dateObj = new Date(taskForm.due_date)
+      if (!isNaN(dateObj.getTime())) {
+        return dateObj.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      }
+    } catch (error) {
+      console.error('Error parsing time:', error)
+    }
+    return ''
+  }
+
+  // 更新表单中的日期选择部分
+  // <div>
+  //   <label className="text-base font-medium">预计完成时间</label>
+  //   <div className="flex gap-2 mt-2">
+  //     <Input
+  //       type="date"
+  //       value={getCurrentDate()}
+  //       onChange={handleDateChange}
+  //       className="flex-1"
+  //     />
+  //     <Input
+  //       type="time"
+  //       value={getCurrentTime()}
+  //       onChange={handleTimeChange}
+  //       className="flex-1"
+  //     />
+  //   </div>
+  // </div>
+
+  // 更新 isDateOverdue 函数
+  const isDateOverdue = (dateString: string | null) => {
+    if (!dateString) return false
+    const dueDate = new Date(dateString)
+    const today = new Date()
+    return dueDate < today
+  }
+
+  // 更新 formatDateTime 函数来显示日期和时间
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return ""
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return dateString
+      
+      // 使用格式化显示完整日期和时间
+      return format(date, 'yyyy-MM-dd HH:mm')
+    } catch (error) {
+      console.error("日期格式化错误:", error)
+      return dateString
+    }
+  }
+
+  // 打开子任务侧边栏
+  const openSubtaskSidebar = (task: Task) => {
+    setSelectedTaskForSubtask(task)
+    setSubtaskOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -458,38 +551,12 @@ export default function Dashboard() {
       <main className="container mx-auto p-4 max-w-6xl">
         <div className="flex justify-between items-center my-6">
           <h1 className="text-2xl font-bold">待办事项</h1>
-        </div>
-
-        {/* 快速添加任务 */}
-        <div className="flex flex-col sm:flex-row gap-2 mb-6">
-          <Input
-            placeholder="添加新任务..."
-            value={newTask}
-            onChange={(e) => setNewTask(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") quickAddTask()
-            }}
-            className="flex-1"
-          />
-          <div className="flex gap-2">
-            <Select
-              value={selectedQuadrant.toString()}
-              onValueChange={(value) => setSelectedQuadrant(Number.parseInt(value) as 1 | 2 | 3 | 4)}
-            >
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="选择象限" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">象限一 - 紧急且重要</SelectItem>
-                <SelectItem value="2">象限二 - 重要不紧急</SelectItem>
-                <SelectItem value="3">象限三 - 紧急不重要</SelectItem>
-                <SelectItem value="4">象限四 - 不紧急不重要</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={quickAddTask} className="whitespace-nowrap">
-              <PlusCircle className="mr-2 h-4 w-4" /> 添加
-            </Button>
-          </div>
+          <Button onClick={() => {
+            resetTaskForm();
+            setIsEditing(true);
+          }} className="whitespace-nowrap">
+            <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
+          </Button>
         </div>
 
         {/* 视图切换按钮 */}
@@ -593,6 +660,7 @@ export default function Dashboard() {
                         onEdit={() => startEditTask(task)}
                         onDelete={() => deleteTaskItem(task.id)}
                         onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                        onAddSubtask={() => openSubtaskSidebar(task)}
                         viewType={viewType}
                         quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                       />
@@ -629,6 +697,7 @@ export default function Dashboard() {
                             onEdit={() => startEditTask(task)}
                             onDelete={() => deleteTaskItem(task.id)}
                             onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                            onAddSubtask={() => openSubtaskSidebar(task)}
                             viewType={viewType}
                             quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                           />
@@ -637,7 +706,7 @@ export default function Dashboard() {
                     </div>
                   )
                 })
-                .filter(Boolean)
+                .filter((item): item is JSX.Element => item !== null)
             ) : (
               <div className="text-center text-gray-500 py-4 border rounded-lg p-4">暂无标签，请先添加标签</div>
             )}
@@ -663,6 +732,7 @@ export default function Dashboard() {
                         onEdit={() => startEditTask(task)}
                         onDelete={() => deleteTaskItem(task.id)}
                         onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                        onAddSubtask={() => openSubtaskSidebar(task)}
                         viewType={viewType}
                         quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                       />
@@ -690,6 +760,7 @@ export default function Dashboard() {
                       onEdit={() => startEditTask(task)}
                       onDelete={() => deleteTaskItem(task.id)}
                       onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                      onAddSubtask={() => openSubtaskSidebar(task)}
                       viewType={viewType}
                       quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                     />
@@ -721,6 +792,7 @@ export default function Dashboard() {
                     onEdit={() => startEditTask(task)}
                     onDelete={() => deleteTaskItem(task.id)}
                     onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                    onAddSubtask={() => openSubtaskSidebar(task)}
                     viewType={viewType}
                     quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                   />
@@ -783,12 +855,20 @@ export default function Dashboard() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">预计完成时间</label>
-                  <Input
-                    type="date"
-                    value={taskForm.due_date}
-                    onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                    className="h-12"
-                  />
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      type="date"
+                      value={getCurrentDate()}
+                      onChange={handleDateChange}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="time"
+                      value={getCurrentTime()}
+                      onChange={handleTimeChange}
+                      className="flex-1"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -808,18 +888,6 @@ export default function Dashboard() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {taskForm.tags.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="cursor-pointer px-3 py-1 text-sm"
-                        onClick={() => toggleTaskTag(tag)}
-                      >
-                        {tag} ×
-                      </Badge>
-                    ))}
-                  </div>
                 </div>
               </div>
 
@@ -888,6 +956,13 @@ export default function Dashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* 子任务侧边栏 */}
+        <SubtaskSidebar
+          open={subtaskOpen}
+          onOpenChange={setSubtaskOpen}
+          task={selectedTaskForSubtask}
+        />
       </main>
     </>
   )
@@ -899,6 +974,7 @@ function TaskItem({
   onEdit,
   onDelete,
   onToggleComplete,
+  onAddSubtask,
   viewType = "quadrant",
   quadrantInfo,
 }: {
@@ -906,16 +982,29 @@ function TaskItem({
   onEdit: () => void
   onDelete: () => void
   onToggleComplete: () => void
+  onAddSubtask: () => void
   viewType?: ViewType
   quadrantInfo?: { title: string; bgColor: string; borderColor: string }
 }) {
   // 检查日期是否已过期
   const isDateOverdue = (dateString: string | null) => {
     if (!dateString) return false
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // 重置时间部分，只比较日期
     const dueDate = new Date(dateString)
+    const today = new Date()
     return dueDate < today
+  }
+
+  // 更新表单中的日期显示
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return ""
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return dateString
+      return format(date, 'yyyy-MM-dd HH:mm')
+    } catch (error) {
+      console.error("日期格式化错误:", error)
+      return dateString
+    }
   }
 
   return (
@@ -939,14 +1028,12 @@ function TaskItem({
             {viewType === "quadrant" && (
               <>
                 {task.due_date && (
-                  <p
-                    className={cn(
-                      "text-xs",
-                      isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
-                    )}
-                  >
-                    截止日期: {task.due_date}
-                  </p>
+                  <div className={cn(
+                    "text-xs mt-1",
+                    isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
+                  )}>
+                    截止日期: {formatDateTime(task.due_date)}
+                  </div>
                 )}
                 {task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -963,14 +1050,12 @@ function TaskItem({
             {viewType === "category" && (
               <>
                 {task.due_date && (
-                  <p
-                    className={cn(
-                      "text-xs",
-                      isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
-                    )}
-                  >
-                    截止日期: {task.due_date}
-                  </p>
+                  <div className={cn(
+                    "text-xs mt-1",
+                    isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
+                  )}>
+                    截止日期: {formatDateTime(task.due_date)}
+                  </div>
                 )}
                 {quadrantInfo && (
                   <Badge variant="outline" className="mt-1">
@@ -996,6 +1081,9 @@ function TaskItem({
           </div>
         </div>
         <div className="flex gap-1">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddSubtask}>
+            <ListTree className="h-3 w-3" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onEdit}>
             <Edit className="h-3 w-3" />
           </Button>

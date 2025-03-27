@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CheckSquare, BarChart3, StickyNote, Menu, LogOut } from "lucide-react"
+import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -10,6 +10,7 @@ import { useState, useEffect } from "react"
 import { logoutUser } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import * as Collapsible from '@radix-ui/react-collapsible'
 
 interface SidebarProps {
   user: { id: string; name: string; email: string } | null
@@ -19,13 +20,32 @@ export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const [isMobile, setIsMobile] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
-  // 检测是否为移动设备
+  // 检测是否为移动设备并从本地存储中加载collapsed状态
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      
+      // 如果切换到移动设备，强制展开侧边栏
+      if (mobile && isCollapsed) {
+        setIsCollapsed(false)
+      }
+    }
+
+    // 从localStorage读取折叠状态 - 使用try-catch避免服务器渲染问题
+    try {
+      if (typeof window !== 'undefined') {
+        const savedCollapsedState = localStorage.getItem('sidebar-collapsed')
+        if (savedCollapsedState !== null) {
+          setIsCollapsed(savedCollapsedState === 'true')
+        }
+      }
+    } catch (error) {
+      console.error('无法访问localStorage:', error)
     }
 
     checkIsMobile()
@@ -34,7 +54,22 @@ export function Sidebar({ user }: SidebarProps) {
     return () => {
       window.removeEventListener("resize", checkIsMobile)
     }
-  }, [])
+  }, [])  // 移除isCollapsed依赖，避免循环重渲染
+
+  // 保存折叠状态到localStorage
+  const toggleCollapsed = () => {
+    const newState = !isCollapsed
+    setIsCollapsed(newState)
+    
+    // 安全地访问localStorage
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('sidebar-collapsed', String(newState))
+      }
+    } catch (error) {
+      console.error('无法保存到localStorage:', error)
+    }
+  }
 
   // 退出登录
   const handleLogout = async () => {
@@ -63,6 +98,11 @@ export function Sidebar({ user }: SidebarProps) {
       icon: CheckSquare,
     },
     {
+      title: "日历视图",
+      href: "/dashboard/calendar",
+      icon: Calendar,
+    },
+    {
       title: "备忘录",
       href: "/dashboard/notes",
       icon: StickyNote,
@@ -77,27 +117,51 @@ export function Sidebar({ user }: SidebarProps) {
   // 侧边栏内容
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      <div className="px-2 py-3 md:px-3 md:py-4">
-        <h2 className="mb-2 px-3 text-base md:text-lg font-semibold">提速管理</h2>
-        {user && <div className="mb-3 px-3 text-xs md:text-sm text-muted-foreground">欢迎, {user.name}</div>}
-        <div className="space-y-1">
-          {sidebarItems.map((item) => (
-            <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)}>
-              <Button
-                variant={pathname === item.href ? "secondary" : "ghost"}
-                className={cn("w-full justify-start text-sm", pathname === item.href && "bg-muted font-medium")}
-              >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.title}
-              </Button>
-            </Link>
-          ))}
-        </div>
+      <div className="flex items-center justify-between px-2 py-3 md:px-3 md:py-4">
+        <h2 className={cn("text-base md:text-lg font-semibold", isCollapsed ? "hidden" : "block")}>AI提速</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden md:flex"
+          onClick={toggleCollapsed}
+          aria-label={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
+        >
+          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
+      </div>
+      {user && !isCollapsed && (
+        <div className="mb-3 px-3 text-xs md:text-sm text-muted-foreground">欢迎, {user.name}</div>
+      )}
+      <div className="space-y-1 px-2">
+        {sidebarItems.map((item) => (
+          <Link key={item.href} href={item.href} onClick={(e) => {
+            // 如果是移动端，点击后关闭侧边栏
+            if (isMobile) {
+              setIsOpen(false);
+            }
+          }}>
+            <Button
+              variant={pathname === item.href ? "secondary" : "ghost"}
+              className={cn(
+                "w-full justify-start text-sm",
+                pathname === item.href && "bg-muted font-medium",
+                isCollapsed ? "px-2" : ""
+              )}
+            >
+              <item.icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
+              {!isCollapsed && <span>{item.title}</span>}
+            </Button>
+          </Link>
+        ))}
       </div>
       <div className="mt-auto px-2 py-3 md:px-3 md:py-4">
-        <Button variant="outline" className="w-full justify-start text-sm" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
-          退出登录
+        <Button
+          variant="outline"
+          className={cn("w-full justify-start text-sm", isCollapsed ? "px-2" : "")}
+          onClick={handleLogout}
+        >
+          <LogOut className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
+          {!isCollapsed && <span>退出登录</span>}
         </Button>
       </div>
     </div>
@@ -107,15 +171,21 @@ export function Sidebar({ user }: SidebarProps) {
   if (isMobile) {
     return (
       <>
-        <div className="flex h-14 md:h-16 items-center border-b px-2 md:px-4">
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex h-14 md:h-16 items-center border-b px-2 md:px-4 sticky top-0 bg-background z-10">
+          <Sheet open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open);
+            // 如果打开了侧边栏但在移动设备上，确保侧边栏展开
+            if (open && isMobile) {
+              setIsCollapsed(false);
+            }
+          }}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="mr-2 z-10" onClick={() => setIsOpen(true)}>
+              <Button variant="outline" size="icon" className="mr-2 z-10">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">打开菜单</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[80%] max-w-[280px] p-0">
+            <SheetContent side="left" className="w-[80%] max-w-[280px] p-0 overflow-y-auto">
               <SidebarContent />
             </SheetContent>
           </Sheet>
@@ -127,7 +197,10 @@ export function Sidebar({ user }: SidebarProps) {
 
   // 桌面端侧边栏
   return (
-    <div className="hidden md:flex h-screen w-64 flex-col border-r">
+    <div className={cn(
+      "hidden md:flex h-screen flex-col border-r transition-all duration-300 sticky top-0",
+      isCollapsed ? "w-[60px]" : "w-64"
+    )}>
       <SidebarContent />
     </div>
   )
