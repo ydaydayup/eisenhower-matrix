@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast"
 import { getUserSession } from "@/lib/auth"
 import { type Task, getUserTasks, createTask, updateTask, deleteTask } from "@/lib/tasks"
 import { type Tag, getUserTags, createTag, deleteTag } from "@/lib/tags"
+import { format } from "date-fns"
 
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
@@ -152,6 +153,7 @@ export default function Dashboard() {
     if (!editingTask || taskForm.title.trim() === "") return
 
     try {
+      console.log("待办页面保存任务，截止日期:", taskForm.due_date)
       const updatedTask = await updateTask(editingTask.id, {
         title: taskForm.title,
         quadrant: taskForm.quadrant,
@@ -161,6 +163,7 @@ export default function Dashboard() {
       })
 
       if (updatedTask) {
+        console.log("更新成功后的日期:", updatedTask.due_date)
         setTasks(tasks.map((task) => (task.id === editingTask.id ? updatedTask : task)))
       }
     } catch (error) {
@@ -405,6 +408,117 @@ export default function Dashboard() {
       })
     } finally {
       setIsGeneratingNotes(false)
+    }
+  }
+
+  // 更新任务表单相关的函数
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = e.target.value
+    // 如果有时间，保留原有时间；没有则使用默认时间
+    let timeString = '00:00'
+    if (taskForm.due_date) {
+      try {
+        const dateObj = new Date(taskForm.due_date)
+        if (!isNaN(dateObj.getTime())) {
+          timeString = dateObj.toLocaleTimeString('en-US', { 
+            hour12: false,
+            hour: '2-digit', 
+            minute: '2-digit'
+          })
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error)
+      }
+    }
+    setTaskForm({ ...taskForm, due_date: date ? `${date}T${timeString}` : '' })
+  }
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = e.target.value
+    // 如果有日期，保留原有日期；没有则使用当前日期
+    let dateString = format(new Date(), 'yyyy-MM-dd')
+    if (taskForm.due_date) {
+      try {
+        const dateObj = new Date(taskForm.due_date)
+        if (!isNaN(dateObj.getTime())) {
+          dateString = format(dateObj, 'yyyy-MM-dd')
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error)
+      }
+    }
+    setTaskForm({ ...taskForm, due_date: `${dateString}T${time}` })
+  }
+
+  const getCurrentDate = () => {
+    if (!taskForm.due_date) return ''
+    try {
+      const dateObj = new Date(taskForm.due_date)
+      if (!isNaN(dateObj.getTime())) {
+        return format(dateObj, 'yyyy-MM-dd')
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error)
+    }
+    return ''
+  }
+
+  const getCurrentTime = () => {
+    if (!taskForm.due_date) return ''
+    try {
+      const dateObj = new Date(taskForm.due_date)
+      if (!isNaN(dateObj.getTime())) {
+        return dateObj.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      }
+    } catch (error) {
+      console.error('Error parsing time:', error)
+    }
+    return ''
+  }
+
+  // 更新表单中的日期选择部分
+  // <div>
+  //   <label className="text-base font-medium">预计完成时间</label>
+  //   <div className="flex gap-2 mt-2">
+  //     <Input
+  //       type="date"
+  //       value={getCurrentDate()}
+  //       onChange={handleDateChange}
+  //       className="flex-1"
+  //     />
+  //     <Input
+  //       type="time"
+  //       value={getCurrentTime()}
+  //       onChange={handleTimeChange}
+  //       className="flex-1"
+  //     />
+  //   </div>
+  // </div>
+
+  // 更新 isDateOverdue 函数
+  const isDateOverdue = (dateString: string | null) => {
+    if (!dateString) return false
+    const dueDate = new Date(dateString)
+    const today = new Date()
+    return dueDate < today
+  }
+
+  // 更新 formatDateTime 函数来显示日期和时间
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return ""
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return dateString
+      
+      // 使用格式化显示完整日期和时间
+      return format(date, 'yyyy-MM-dd HH:mm')
+    } catch (error) {
+      console.error("日期格式化错误:", error)
+      return dateString
     }
   }
 
@@ -726,12 +840,20 @@ export default function Dashboard() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">预计完成时间</label>
-                  <Input
-                    type="date"
-                    value={taskForm.due_date}
-                    onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                    className="h-12"
-                  />
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      type="date"
+                      value={getCurrentDate()}
+                      onChange={handleDateChange}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="time"
+                      value={getCurrentTime()}
+                      onChange={handleTimeChange}
+                      className="flex-1"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -843,10 +965,22 @@ function TaskItem({
   // 检查日期是否已过期
   const isDateOverdue = (dateString: string | null) => {
     if (!dateString) return false
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // 重置时间部分，只比较日期
     const dueDate = new Date(dateString)
+    const today = new Date()
     return dueDate < today
+  }
+
+  // 更新表单中的日期显示
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return ""
+    try {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return dateString
+      return format(date, 'yyyy-MM-dd HH:mm')
+    } catch (error) {
+      console.error("日期格式化错误:", error)
+      return dateString
+    }
   }
 
   return (
@@ -870,14 +1004,12 @@ function TaskItem({
             {viewType === "quadrant" && (
               <>
                 {task.due_date && (
-                  <p
-                    className={cn(
-                      "text-xs",
-                      isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
-                    )}
-                  >
-                    截止日期: {task.due_date}
-                  </p>
+                  <div className={cn(
+                    "text-xs mt-1",
+                    isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
+                  )}>
+                    截止日期: {formatDateTime(task.due_date)}
+                  </div>
                 )}
                 {task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
@@ -894,14 +1026,12 @@ function TaskItem({
             {viewType === "category" && (
               <>
                 {task.due_date && (
-                  <p
-                    className={cn(
-                      "text-xs",
-                      isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
-                    )}
-                  >
-                    截止日期: {task.due_date}
-                  </p>
+                  <div className={cn(
+                    "text-xs mt-1",
+                    isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
+                  )}>
+                    截止日期: {formatDateTime(task.due_date)}
+                  </div>
                 )}
                 {quadrantInfo && (
                   <Badge variant="outline" className="mt-1">

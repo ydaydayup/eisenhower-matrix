@@ -10,6 +10,7 @@ import { Task } from "@/lib/tasks"
 import { Eye } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 
 interface TaskEditModalProps {
   open: boolean
@@ -41,6 +42,8 @@ export default function TaskEditModal({
 
   useEffect(() => {
     if (task) {
+      console.log("任务编辑弹窗接收到任务:", task);
+      console.log("任务标签:", task.tags);
       setTaskForm({
         title: task.title,
         quadrant: task.quadrant,
@@ -82,7 +85,7 @@ export default function TaskEditModal({
 
       const data = await response.json()
       
-      setTaskForm(prev => ({
+      setTaskForm((prev: typeof taskForm) => ({
         ...prev,
         quadrant: data.quadrant,
         notes: data.notes || prev.notes,
@@ -100,6 +103,76 @@ export default function TaskEditModal({
         variant: "destructive",
       })
     }
+  }
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = e.target.value
+    let timeString = '00:00'
+    if (taskForm.due_date) {
+      try {
+        const dateObj = new Date(taskForm.due_date)
+        if (!isNaN(dateObj.getTime())) {
+          timeString = dateObj.toLocaleTimeString('en-US', { 
+            hour12: false,
+            hour: '2-digit', 
+            minute: '2-digit'
+          })
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error)
+      }
+    }
+    const newDueDate = date ? `${date}T${timeString}` : ''
+    console.log(`设置新日期: ${newDueDate}`)
+    setTaskForm((prev: typeof taskForm) => ({ ...prev, due_date: newDueDate }))
+  }
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = e.target.value
+    let dateString = format(new Date(), 'yyyy-MM-dd')
+    if (taskForm.due_date) {
+      try {
+        const dateObj = new Date(taskForm.due_date)
+        if (!isNaN(dateObj.getTime())) {
+          dateString = format(dateObj, 'yyyy-MM-dd')
+        }
+      } catch (error) {
+        console.error('Date parsing error:', error)
+      }
+    }
+    const newDueDate = `${dateString}T${time}`
+    console.log(`设置新时间: ${newDueDate}`)
+    setTaskForm((prev: typeof taskForm) => ({ ...prev, due_date: newDueDate }))
+  }
+
+  const getCurrentDate = () => {
+    if (!taskForm.due_date) return format(new Date(), 'yyyy-MM-dd')
+    try {
+      const dateObj = new Date(taskForm.due_date)
+      if (!isNaN(dateObj.getTime())) {
+        return format(dateObj, 'yyyy-MM-dd')
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error)
+    }
+    return format(new Date(), 'yyyy-MM-dd')
+  }
+
+  const getCurrentTime = () => {
+    if (!taskForm.due_date) return '00:00'
+    try {
+      const dateObj = new Date(taskForm.due_date)
+      if (!isNaN(dateObj.getTime())) {
+        return dateObj.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      }
+    } catch (error) {
+      console.error('Error parsing time:', error)
+    }
+    return '00:00'
   }
 
   return (
@@ -145,12 +218,18 @@ export default function TaskEditModal({
 
             <div>
               <label className="text-base font-medium">预计完成时间</label>
-              <Input
-                type="date"
-                value={taskForm.due_date}
-                onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-                className="mt-2"
-              />
+              <div className="flex gap-2 mt-2">
+                <Input
+                  type="date"
+                  value={getCurrentDate()}
+                  onChange={handleDateChange}
+                />
+                <Input
+                  type="time"
+                  value={getCurrentTime()}
+                  onChange={handleTimeChange}
+                />
+              </div>
             </div>
 
             <div>
@@ -158,16 +237,18 @@ export default function TaskEditModal({
               <Select
                 value={taskForm.tags[0] || ""}
                 onValueChange={(value) =>
-                  setTaskForm({ ...taskForm, tags: [value] })
+                  setTaskForm((prev: typeof taskForm) => ({ ...prev, tags: [value] }))
                 }
               >
                 <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="选择标签" />
+                  <SelectValue placeholder="选择标签">
+                    {taskForm.tags[0] && tags.find(tag => tag.id === taskForm.tags[0] || tag.name === taskForm.tags[0])?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {tags.length > 0 ? (
                     tags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.name}>
+                      <SelectItem key={tag.id} value={tag.id}>
                         {tag.name}
                       </SelectItem>
                     ))

@@ -13,6 +13,7 @@ import TaskEditModal from '@/components/TaskEditModal'
 import { Button } from "@/components/ui/button"
 import { CalendarIcon, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { cn } from '@/lib/utils'
 
 import "./calendar.css"
 
@@ -37,7 +38,24 @@ const formats = {
   weekdayFormat: (date: Date) => {
     const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
     return weekdays[date.getDay()]
-  }
+  },
+  eventTimeRangeFormat: ({ start, end }: { start: Date, end: Date }) => {
+    return `${format(start, 'HH:mm')}`;
+  },
+  timeGutterFormat: (date: Date) => format(date, 'HH:mm'),
+}
+
+interface Event {
+  id: string
+  title: string
+  start: Date
+  end: Date
+  allDay?: boolean
+}
+
+interface DateRange {
+  start: Date
+  end: Date
 }
 
 export default function CalendarPage() {
@@ -88,7 +106,7 @@ export default function CalendarPage() {
               title: task.title,
               start: dueDate,
               end: dueDate,
-              allDay: true,
+              allDay: false, // 改为false以支持时间显示
               resource: task,
               quadrant: task.quadrant // 添加象限信息用于样式
             }
@@ -113,15 +131,31 @@ export default function CalendarPage() {
   // 处理任务选择
   const handleSelectEvent = (event: any) => {
     const task = event.resource as Task
-    setSelectedTask(task)
+    console.log("选中的任务:", task);
+    console.log("选中的标签:", task.tags);
+    
+    // 清空编辑状态，避免混淆
+    setSelectedTask(null);
     setTaskForm({
-      title: task.title,
-      quadrant: task.quadrant,
-      due_date: task.due_date || "",
-      tags: task.tags || [],
-      notes: task.notes || "",
-    })
-    setIsEditing(true)
+      title: "",
+      quadrant: 1,
+      due_date: "",
+      tags: [],
+      notes: "",
+    });
+    
+    // 延迟设置新状态以确保先清空
+    setTimeout(() => {
+      setSelectedTask(task);
+      setTaskForm({
+        title: task.title,
+        quadrant: task.quadrant,
+        due_date: task.due_date || "",
+        tags: task.tags || [],
+        notes: task.notes || "",
+      });
+      setIsEditing(true);
+    }, 10);
   }
 
   // 处理日期单元格点击
@@ -161,6 +195,9 @@ export default function CalendarPage() {
     if (!selectedTask || taskForm.title.trim() === "") return
 
     try {
+      console.log("保存任务前:", taskForm);
+      console.log("截止日期:", taskForm.due_date);
+      
       const updatedTask = await updateTask(selectedTask.id, {
         title: taskForm.title,
         quadrant: taskForm.quadrant,
@@ -170,6 +207,9 @@ export default function CalendarPage() {
       })
 
       if (updatedTask) {
+        console.log("更新后的任务:", updatedTask);
+        console.log("更新后的日期:", updatedTask.due_date);
+        
         // 如果任务已完成，从日历中移除
         if (updatedTask.completed) {
           setEvents(events.filter(event => event.id !== updatedTask.id))
@@ -182,7 +222,7 @@ export default function CalendarPage() {
                   title: updatedTask.title,
                   start: new Date(updatedTask.due_date as string),
                   end: new Date(updatedTask.due_date as string),
-                  allDay: true,
+                  allDay: false,
                   resource: updatedTask,
                   quadrant: updatedTask.quadrant
                 }
@@ -227,9 +267,11 @@ export default function CalendarPage() {
         opacity: 0.9,
         color: 'white',
         border: '0',
-        display: 'block',
+        display: 'flex',
         fontWeight: '500',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+        overflow: 'visible',
+        whiteSpace: 'nowrap'
       }
     }
   }
@@ -247,7 +289,7 @@ export default function CalendarPage() {
       <CardContent className="p-6 flex flex-col h-full">
         <div className="flex justify-between items-center mb-6 bg-white rounded-lg p-3 shadow-sm">
           <div className="flex space-x-2">
-            <Button 
+            <Button
               variant="outline" 
               onClick={() => handleNavigate('TODAY')}
               className="flex items-center gap-1 hover:bg-primary hover:text-white transition-colors"
@@ -283,7 +325,7 @@ export default function CalendarPage() {
             >
               月
             </Button>
-            <Button 
+            <Button
               variant={view === 'day' ? "default" : "outline"} 
               onClick={() => setView('day')}
               className={view === 'day' ? "bg-primary text-white" : "hover:bg-gray-100"}
@@ -292,7 +334,7 @@ export default function CalendarPage() {
             </Button>
           </div>
         </div>
-
+        
         <div className="flex-grow bg-white rounded-lg shadow-sm overflow-hidden">
           <BigCalendar
             localizer={localizer}
@@ -303,7 +345,7 @@ export default function CalendarPage() {
             views={['month', 'day']}
             view={view}
             date={date}
-            onView={setView}
+            onView={(newView: View) => setView(newView as 'month' | 'day')}
             onNavigate={handleNavigate}
             formats={formats}
             messages={{
@@ -312,6 +354,10 @@ export default function CalendarPage() {
               today: '今天',
               next: '下一个',
               previous: '上一个',
+              allDay: '全天',
+              date: '日期',
+              time: '时间',
+              event: '事件',
             }}
             onSelectEvent={handleSelectEvent}
             onSelectSlot={handleSelectSlot}
@@ -320,6 +366,17 @@ export default function CalendarPage() {
             popup
             toolbar={false}
             eventPropGetter={eventStyleGetter}
+            min={new Date(0, 0, 0, 0, 0, 0)}
+            max={new Date(0, 0, 0, 23, 59, 59)}
+            step={30}
+            timeslots={2}
+            components={{
+              event: (props) => (
+                <div className="flex items-center py-1 px-2">
+                  <div className="text-white font-medium truncate">{props.title}</div>
+                </div>
+              )
+            }}
           />
         </div>
 
