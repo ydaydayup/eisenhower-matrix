@@ -177,7 +177,7 @@ export default function TaskEditModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[800px]">
+      <DialogContent className="max-w-[1000px]">
         <DialogHeader>
           <DialogTitle className="text-xl">编辑任务</DialogTitle>
         </DialogHeader>
@@ -224,11 +224,11 @@ export default function TaskEditModal({
                   value={getCurrentDate()}
                   onChange={handleDateChange}
                 />
-                <Input
-                  type="time"
-                  value={getCurrentTime()}
-                  onChange={handleTimeChange}
-                />
+                {/*<Input*/}
+                {/*  type="time"*/}
+                {/*  value={getCurrentTime()}*/}
+                {/*  onChange={handleTimeChange}*/}
+                {/*/>*/}
               </div>
             </div>
 
