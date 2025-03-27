@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 
 export default async function Home() {
   try {
     // 使用服务器端 Supabase 客户端
-    const supabase = createServerSupabaseClient()
+    const supabase = createClient()
 
     // 获取会话
     const {

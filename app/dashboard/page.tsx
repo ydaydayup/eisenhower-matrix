@@ -815,7 +815,7 @@ export default function Dashboard() {
             }
           }}
         >
-          <DialogContent className="sm:max-w-[850px] h-[90vh] flex flex-col">
+          <DialogContent className="sm:max-w-[1000px] h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>{editingTask ? "编辑任务" : "添加任务"}</DialogTitle>
             </DialogHeader>
@@ -862,12 +862,12 @@ export default function Dashboard() {
                       onChange={handleDateChange}
                       className="flex-1"
                     />
-                    <Input
-                      type="time"
-                      value={getCurrentTime()}
-                      onChange={handleTimeChange}
-                      className="flex-1"
-                    />
+                    {/*<Input*/}
+                    {/*  type="time"*/}
+                    {/*  value={getCurrentTime()}*/}
+                    {/*  onChange={handleTimeChange}*/}
+                    {/*  className="flex-1"*/}
+                    {/*/>*/}
                   </div>
                 </div>
 
