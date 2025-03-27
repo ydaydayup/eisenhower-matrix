@@ -7,11 +7,11 @@ import { zhCN } from 'date-fns/locale'
 import "react-big-calendar/lib/css/react-big-calendar.css"
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useToast } from "@/components/ui/use-toast"
-import { Task, updateTask, getUserTasks } from "@/lib/tasks"
+import { Task, updateTask, getUserTasks, createTask } from "@/lib/tasks"
 import { getUserTags } from "@/lib/tags"
 import TaskEditModal from '@/components/TaskEditModal'
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { CalendarIcon, ChevronLeft, ChevronRight, Calendar, PlusCircle } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from '@/lib/utils'
 
@@ -64,9 +64,11 @@ export default function CalendarPage() {
   const [events, setEvents] = useState<any[]>([])
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
   const [tags, setTags] = useState<{ id: string; name: string }[]>([])
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
   const [taskForm, setTaskForm] = useState({
     title: "",
     quadrant: 1 as 1 | 2 | 3 | 4,
@@ -86,6 +88,8 @@ export default function CalendarPage() {
           console.error('No user found')
           return
         }
+        
+        setUser(user)
         
         // 获取用户标签
         const userTags = await getUserTags(user.id)
@@ -127,6 +131,68 @@ export default function CalendarPage() {
 
     loadUserData()
   }, [toast])
+
+  // 重置任务表单
+  const resetTaskForm = () => {
+    // 如果是日视图，预设当前选中的日期
+    const defaultDate = view === 'day' ? format(date, 'yyyy-MM-dd') : ''
+    
+    setTaskForm({
+      title: "",
+      quadrant: 1,
+      due_date: defaultDate,
+      tags: [],
+      notes: "",
+    })
+  }
+
+  // 添加新任务
+  const addTask = async () => {
+    if (!user || taskForm.title.trim() === "") return
+
+    try {
+      const newTaskData = {
+        user_id: user.id,
+        title: taskForm.title,
+        quadrant: taskForm.quadrant,
+        due_date: taskForm.due_date || null,
+        tags: taskForm.tags,
+        notes: taskForm.notes,
+        completed: false,
+      }
+
+      const createdTask = await createTask(newTaskData)
+      if (createdTask && createdTask.due_date) {
+        // 添加新任务到日历事件中
+        const dueDate = new Date(createdTask.due_date)
+        const newEvent = {
+          id: createdTask.id,
+          title: createdTask.title,
+          start: dueDate,
+          end: dueDate,
+          allDay: false,
+          resource: createdTask,
+          quadrant: createdTask.quadrant
+        }
+        
+        setEvents([...events, newEvent])
+        resetTaskForm()
+        setIsCreating(false)
+        
+        toast({
+          title: "添加成功",
+          description: "任务已添加到日历",
+        })
+      }
+    } catch (error) {
+      console.error("Error adding task:", error)
+      toast({
+        title: "添加失败",
+        description: "无法添加任务，请稍后再试",
+        variant: "destructive",
+      })
+    }
+  }
 
   // 处理任务选择
   const handleSelectEvent = (event: any) => {
@@ -276,120 +342,169 @@ export default function CalendarPage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
   return (
-    <Card className="flex flex-col h-full shadow-sm border-0">
-      <CardContent className="p-6 flex flex-col h-full">
-        <div className="flex justify-between items-center mb-6 bg-white rounded-lg p-3 shadow-sm">
-          <div className="flex space-x-2">
-            <Button
-              variant="outline" 
-              onClick={() => handleNavigate('TODAY')}
-              className="flex items-center gap-1 hover:bg-primary hover:text-white transition-colors"
-            >
-              <CalendarIcon className="h-4 w-4" />
-              今天
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => handleNavigate('PREV')}
-              className="hover:bg-gray-100 transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => handleNavigate('NEXT')}
-              className="hover:bg-gray-100 transition-colors"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-800">
-            {view === 'month' 
-              ? format(date, 'yyyy年MM月')
-              : format(date, 'yyyy年MM月dd日')}
-          </h2>
-          <div className="flex space-x-2">
-            <Button 
-              variant={view === 'month' ? "default" : "outline"} 
-              onClick={() => setView('month')}
-              className={view === 'month' ? "bg-primary text-white" : "hover:bg-gray-100"}
-            >
-              月
-            </Button>
-            <Button
-              variant={view === 'day' ? "default" : "outline"} 
-              onClick={() => setView('day')}
-              className={view === 'day' ? "bg-primary text-white" : "hover:bg-gray-100"}
-            >
-              日
-            </Button>
+    <div className="container mx-auto p-2 md:p-4 max-w-6xl">
+      {isLoading ? (
+        <div className="flex items-center justify-center h-[70vh]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4">加载中...</p>
           </div>
         </div>
-        
-        <div className="flex-grow bg-white rounded-lg shadow-sm overflow-hidden">
-          <BigCalendar
-            localizer={localizer}
-            events={events}
-            startAccessor="start"
-            endAccessor="end"
-            style={{ height: "100%" }}
-            views={['month', 'day']}
-            view={view}
-            date={date}
-            onView={(newView: View) => setView(newView as 'month' | 'day')}
-            onNavigate={handleNavigate}
-            formats={formats}
-            messages={{
-              month: '月',
-              day: '日',
-              today: '今天',
-              next: '下一个',
-              previous: '上一个',
-              allDay: '全天',
-              date: '日期',
-              time: '时间',
-              event: '事件',
-            }}
-            onSelectEvent={handleSelectEvent}
-            onSelectSlot={handleSelectSlot}
-            selectable={true}
-            className="calendar-custom"
-            popup
-            toolbar={false}
-            eventPropGetter={eventStyleGetter}
-            min={new Date(0, 0, 0, 0, 0, 0)}
-            max={new Date(0, 0, 0, 23, 59, 59)}
-            step={30}
-            timeslots={2}
-            components={{
-              event: (props) => (
-                <div className="flex items-center py-1 px-2">
-                  <div className="text-white font-medium truncate">{props.title}</div>
-                </div>
-              )
-            }}
-          />
-        </div>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+            <h1 className="text-xl md:text-2xl font-bold mb-2 sm:mb-0">日历视图</h1>
+            
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-2"
+                  onClick={() => handleNavigate('TODAY')}
+                >
+                  今天
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8" 
+                  onClick={() => handleNavigate('PREV')}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8" 
+                  onClick={() => handleNavigate('NEXT')}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant={view === 'month' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setView('month')}
+                >
+                  <Calendar className="mr-1 h-4 w-4" />
+                  月视图
+                </Button>
+                <Button
+                  variant={view === 'day' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setView('day')}
+                >
+                  <CalendarIcon className="mr-1 h-4 w-4" />
+                  日视图
+                </Button>
+              </div>
+            </div>
+          </div>
 
-        <TaskEditModal
-          open={isEditing}
-          task={selectedTask}
-          onOpenChange={(open) => setIsEditing(open)}
-          onSave={handleSaveTask}
-          taskForm={taskForm}
-          setTaskForm={setTaskForm}
-          tags={tags}
-        />
-      </CardContent>
-    </Card>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-800">
+              {view === 'month' 
+                ? format(date, 'yyyy年MM月')
+                : format(date, 'yyyy年MM月dd日')}
+            </h2>
+            
+            <Button 
+              onClick={() => {
+                resetTaskForm();
+                setIsCreating(true);
+              }} 
+              className="whitespace-nowrap"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
+            </Button>
+          </div>
+
+          <Card className="overflow-hidden">
+            <CardContent className="p-1 md:p-4">
+              <div 
+                className={cn(
+                  "big-calendar-container", 
+                  view === 'day' ? 'day-view' : 'month-view'
+                )}
+              >
+                <BigCalendar
+                  localizer={localizer}
+                  events={events}
+                  startAccessor="start"
+                  endAccessor="end"
+                  style={{ height: view === 'day' ? 600 : 550 }}
+                  view={view}
+                  date={date}
+                  onView={() => {}}
+                  onNavigate={() => {}}
+                  formats={formats}
+                  eventPropGetter={eventStyleGetter}
+                  onSelectEvent={handleSelectEvent}
+                  onSelectSlot={handleSelectSlot}
+                  selectable
+                  popup
+                  components={{
+                    month: {
+                      dateHeader: ({ date, label }) => {
+                        const isToday = new Date().toDateString() === date.toDateString()
+                        return (
+                          <div 
+                            className={cn(
+                              "text-sm py-1 text-center font-medium", 
+                              isToday && "bg-primary text-primary-foreground rounded-sm"
+                            )}
+                          >
+                            {date.getDate()}
+                          </div>
+                        )
+                      }
+                    },
+                    toolbar: () => null // 隐藏默认工具栏
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* 任务编辑模态框 */}
+          <TaskEditModal
+            open={isEditing}
+            task={selectedTask}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsEditing(false)
+                setSelectedTask(null)
+              }
+            }}
+            onSave={handleSaveTask}
+            taskForm={taskForm}
+            setTaskForm={setTaskForm}
+            tags={tags}
+          />
+          
+          {/* 新建任务模态框 */}
+          <TaskEditModal
+            open={isCreating}
+            task={null}
+            onOpenChange={(open) => {
+              if (!open) {
+                setIsCreating(false)
+                resetTaskForm()
+              }
+            }}
+            onSave={addTask}
+            taskForm={taskForm}
+            setTaskForm={setTaskForm}
+            tags={tags}
+          />
+        </>
+      )}
+    </div>
   )
 } 

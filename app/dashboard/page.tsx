@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { PlusCircle, Edit, Trash2, Check, LucideTag } from "lucide-react"
+import { useState, useEffect, JSX } from "react"
+import { PlusCircle, Edit, Trash2, Check, LucideTag, ListTree } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
@@ -15,6 +15,7 @@ import { getUserSession } from "@/lib/auth"
 import { type Task, getUserTasks, createTask, updateTask, deleteTask } from "@/lib/tasks"
 import { type Tag, getUserTags, createTag, deleteTag } from "@/lib/tags"
 import { format } from "date-fns"
+import { SubtaskSidebar } from "@/components/SubtaskSidebar"
 
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
@@ -49,6 +50,9 @@ export default function Dashboard() {
     tags: [] as string[],
     notes: "",
   })
+
+  const [subtaskOpen, setSubtaskOpen] = useState(false)
+  const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState<Task | null>(null)
 
   // 获取用户会话
   useEffect(() => {
@@ -522,6 +526,12 @@ export default function Dashboard() {
     }
   }
 
+  // 打开子任务侧边栏
+  const openSubtaskSidebar = (task: Task) => {
+    setSelectedTaskForSubtask(task)
+    setSubtaskOpen(true)
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -650,6 +660,7 @@ export default function Dashboard() {
                         onEdit={() => startEditTask(task)}
                         onDelete={() => deleteTaskItem(task.id)}
                         onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                        onAddSubtask={() => openSubtaskSidebar(task)}
                         viewType={viewType}
                         quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                       />
@@ -686,6 +697,7 @@ export default function Dashboard() {
                             onEdit={() => startEditTask(task)}
                             onDelete={() => deleteTaskItem(task.id)}
                             onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                            onAddSubtask={() => openSubtaskSidebar(task)}
                             viewType={viewType}
                             quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                           />
@@ -694,7 +706,7 @@ export default function Dashboard() {
                     </div>
                   )
                 })
-                .filter(Boolean)
+                .filter((item): item is JSX.Element => item !== null)
             ) : (
               <div className="text-center text-gray-500 py-4 border rounded-lg p-4">暂无标签，请先添加标签</div>
             )}
@@ -720,6 +732,7 @@ export default function Dashboard() {
                         onEdit={() => startEditTask(task)}
                         onDelete={() => deleteTaskItem(task.id)}
                         onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                        onAddSubtask={() => openSubtaskSidebar(task)}
                         viewType={viewType}
                         quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                       />
@@ -747,6 +760,7 @@ export default function Dashboard() {
                       onEdit={() => startEditTask(task)}
                       onDelete={() => deleteTaskItem(task.id)}
                       onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                      onAddSubtask={() => openSubtaskSidebar(task)}
                       viewType={viewType}
                       quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                     />
@@ -778,6 +792,7 @@ export default function Dashboard() {
                     onEdit={() => startEditTask(task)}
                     onDelete={() => deleteTaskItem(task.id)}
                     onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
+                    onAddSubtask={() => openSubtaskSidebar(task)}
                     viewType={viewType}
                     quadrantInfo={quadrants.find((q) => q.id === task.quadrant)}
                   />
@@ -941,6 +956,13 @@ export default function Dashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* 子任务侧边栏 */}
+        <SubtaskSidebar
+          open={subtaskOpen}
+          onOpenChange={setSubtaskOpen}
+          task={selectedTaskForSubtask}
+        />
       </main>
     </>
   )
@@ -952,6 +974,7 @@ function TaskItem({
   onEdit,
   onDelete,
   onToggleComplete,
+  onAddSubtask,
   viewType = "quadrant",
   quadrantInfo,
 }: {
@@ -959,6 +982,7 @@ function TaskItem({
   onEdit: () => void
   onDelete: () => void
   onToggleComplete: () => void
+  onAddSubtask: () => void
   viewType?: ViewType
   quadrantInfo?: { title: string; bgColor: string; borderColor: string }
 }) {
@@ -1057,6 +1081,9 @@ function TaskItem({
           </div>
         </div>
         <div className="flex gap-1">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddSubtask}>
+            <ListTree className="h-3 w-3" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onEdit}>
             <Edit className="h-3 w-3" />
           </Button>
