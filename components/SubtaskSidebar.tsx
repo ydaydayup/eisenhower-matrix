@@ -24,8 +24,8 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
 
   // 加载子任务
   useEffect(() => {
-    async function loadSubtasks() {
-      if (task?.id && open) {
+    const loadSubtasks = async () => {
+      if (task) {
         setIsLoading(true)
         try {
           const taskSubtasks = await getTaskSubtasks(task.id)
@@ -43,17 +43,22 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
       }
     }
 
-    loadSubtasks()
-  }, [task?.id, open, toast])
+    if (open && task) {
+      loadSubtasks()
+    } else {
+      setSubtasks([])
+      setNewSubtaskTitle("")
+    }
+  }, [open, task, toast])
 
   // 添加子任务
   const handleAddSubtask = async () => {
-    if (!task?.id || newSubtaskTitle.trim() === "") return
+    if (!task || !newSubtaskTitle.trim()) return
 
     try {
       const newSubtask = await createSubtask({
         task_id: task.id,
-        title: newSubtaskTitle.trim(),
+        title: newSubtaskTitle,
         completed: false,
       })
 
@@ -107,86 +112,94 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[400px] p-4">
-        <SheetHeader>
-          <SheetTitle>子任务</SheetTitle>
+      <SheetContent side="right" className="w-full sm:max-w-md glass-card border-0 overflow-y-auto">
+        <SheetHeader className="mb-6">
+          <SheetTitle className="text-xl bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600 text-center">
+            子任务管理
+          </SheetTitle>
         </SheetHeader>
-        
+
         {task && (
-          <div className="mt-4 md:mt-6">
-            <div className="font-semibold mb-2 text-sm md:text-base break-words">主任务: {task.title}</div>
-            
-            <div className="mt-4 md:mt-6 space-y-1">
-              <div className="flex items-center gap-2">
+          <div className="space-y-6">
+            <div className="glass-morphism p-4 rounded-xl">
+              <h3 className="font-medium mb-1 text-gray-700">当前任务</h3>
+              <p className="text-lg font-bold">{task.title}</p>
+            </div>
+
+            <div>
+              <div className="flex gap-2 mb-4">
                 <Input
                   value={newSubtaskTitle}
                   onChange={(e) => setNewSubtaskTitle(e.target.value)}
                   placeholder="添加子任务..."
-                  className="text-sm h-9 md:h-10"
+                  className="glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && newSubtaskTitle.trim() !== "") {
+                    if (e.key === "Enter") {
                       handleAddSubtask()
                     }
                   }}
                 />
                 <Button 
-                  size="icon" 
-                  className="h-9 w-9 md:h-10 md:w-10"
                   onClick={handleAddSubtask} 
-                  disabled={newSubtaskTitle.trim() === ""}
+                  disabled={!newSubtaskTitle.trim()} 
+                  className="shrink-0 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="mr-1 h-4 w-4" /> 添加
                 </Button>
               </div>
-            </div>
 
-            <div className="mt-4 md:mt-6">
-              <h3 className="font-medium mb-2 text-sm md:text-base">子任务列表</h3>
-              {isLoading ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                </div>
-              ) : subtasks.length > 0 ? (
-                <div className="space-y-2 max-h-[calc(100vh-240px)] md:max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
-                  {subtasks.map((subtask) => (
-                    <div
-                      key={subtask.id}
-                      className="flex items-center justify-between border rounded-md p-2"
-                    >
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6 flex-shrink-0" 
-                          onClick={() => toggleSubtaskCompletion(subtask.id, subtask.completed)}
-                        >
-                          <div
-                            className={cn(
-                              "h-4 w-4 rounded-full border",
-                              subtask.completed ? "bg-primary border-primary" : "border-gray-300",
-                            )}
-                          >
-                            {subtask.completed && <Check className="h-3 w-3 text-white" />}
-                          </div>
-                        </Button>
-                        <span className={cn("text-sm truncate", subtask.completed && "line-through text-gray-500")}>
-                          {subtask.title}
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 flex-shrink-0"
-                        onClick={() => handleDeleteSubtask(subtask.id)}
+              <div className="mt-4 md:mt-6">
+                <h3 className="font-medium mb-3 text-sm md:text-base text-gray-700">子任务列表</h3>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  </div>
+                ) : subtasks.length > 0 ? (
+                  <div className="space-y-2 max-h-[calc(100vh-240px)] md:max-h-[calc(100vh-220px)] overflow-y-auto pr-1 custom-scrollbar">
+                    {subtasks.map((subtask) => (
+                      <div
+                        key={subtask.id}
+                        className="flex items-center justify-between task-item group"
                       >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-4 text-sm">暂无子任务</div>
-              )}
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 flex-shrink-0 rounded-full hover:bg-white/70" 
+                            onClick={() => toggleSubtaskCompletion(subtask.id, subtask.completed)}
+                          >
+                            <div
+                              className={cn(
+                                "h-4 w-4 rounded-full border transition-colors",
+                                subtask.completed 
+                                  ? "bg-gradient-to-r from-purple-500 to-indigo-500 border-0" 
+                                  : "border-gray-300",
+                              )}
+                            >
+                              {subtask.completed && <Check className="h-3 w-3 text-white" />}
+                            </div>
+                          </Button>
+                          <span className={cn("text-sm truncate px-1 py-2 flex-1", subtask.completed && "line-through text-gray-400")}>
+                            {subtask.title}
+                          </span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 rounded-full hover:bg-white/70 opacity-20 group-hover:opacity-100 transition-all duration-200" 
+                            onClick={() => handleDeleteSubtask(subtask.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-gray-500 hover:text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-400 py-6 rounded-xl bg-white/30 backdrop-blur-sm">
+                    暂无子任务
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

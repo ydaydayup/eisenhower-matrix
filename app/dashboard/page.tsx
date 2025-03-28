@@ -16,6 +16,7 @@ import { type Task, getUserTasks, createTask, updateTask, deleteTask } from "@/l
 import { type Tag, getUserTags, createTag, deleteTag } from "@/lib/tags"
 import { format } from "date-fns"
 import { SubtaskSidebar } from "@/components/SubtaskSidebar"
+import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"
 
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
@@ -313,30 +314,38 @@ export default function Dashboard() {
     {
       id: 1,
       title: "紧急且重要",
-      subtitle: "立即处理",
-      bgColor: "bg-red-50",
-      borderColor: "border-red-200",
+      subtitle: "立即做",
+      bgColor: "bg-red-50/50",
+      borderColor: "border-red-200/50",
+      icon: "⚡",
+      color: "text-red-500"
     },
     {
       id: 2,
       title: "重要不紧急",
-      subtitle: "计划处理",
-      bgColor: "bg-blue-50",
-      borderColor: "border-blue-200",
+      subtitle: "计划做",
+      bgColor: "bg-blue-50/50",
+      borderColor: "border-blue-200/50",
+      icon: "🎯",
+      color: "text-blue-500"
     },
     {
       id: 3,
       title: "紧急不重要",
       subtitle: "委托他人",
-      bgColor: "bg-yellow-50",
-      borderColor: "border-yellow-200",
+      bgColor: "bg-amber-50/50",
+      borderColor: "border-amber-200/50",
+      icon: "⏱️",
+      color: "text-amber-500"
     },
     {
       id: 4,
       title: "不紧急不重要",
       subtitle: "考虑删除",
-      bgColor: "bg-green-50",
-      borderColor: "border-green-200",
+      bgColor: "bg-emerald-50/50",
+      borderColor: "border-emerald-200/50",
+      icon: "🌱",
+      color: "text-emerald-500"
     },
   ]
 
@@ -534,10 +543,10 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-white">
+        <div className="text-center glass-card p-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4">加载中...</p>
+          <p className="mt-4 text-gray-600">加载中...</p>
         </div>
       </div>
     )
@@ -548,96 +557,108 @@ export default function Dashboard() {
       <style jsx global>
         {scrollbarStyles}
       </style>
-      <main className="container mx-auto p-4 max-w-6xl">
-        <div className="flex justify-between items-center my-6">
-          <h1 className="text-2xl font-bold">待办事项</h1>
-          <Button onClick={() => {
-            resetTaskForm();
-            setIsEditing(true);
-          }} className="whitespace-nowrap">
-            <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
-          </Button>
+      <main className="container mx-auto p-4 md:p-6 max-w-6xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center my-6 gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">待办事项</h1>
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+            <Button 
+              onClick={() => {
+                resetTaskForm();
+                setIsEditing(true);
+              }} 
+              className="glass-button bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:shadow-lg transition-all px-4 py-2 rounded-full"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
+            </Button>
+            
+            <Dialog open={showTagManager} onOpenChange={setShowTagManager}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="glass-button rounded-full">
+                  <LucideTag className="mr-2 h-4 w-4" /> 管理标签
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="glass-card border-0">
+                <DialogHeader>
+                  <DialogTitle>标签管理</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="新标签名称"
+                      value={newTagName}
+                      onChange={(e) => setNewTagName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") addTag()
+                      }}
+                      className="glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
+                    />
+                    <Button onClick={addTag} className="glass-button bg-gradient-to-r from-purple-500 to-indigo-500 text-white">添加</Button>
+                  </div>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {tags.map((tag) => (
+                      <div key={tag.id} className="flex justify-between items-center p-3 glass-morphism rounded-lg">
+                        <span>{tag.name}</span>
+                        <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-500 hover:bg-red-50/50" onClick={() => deleteTagItem(tag.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* 视图切换按钮 */}
-        <div className="flex flex-col sm:flex-row gap-2 justify-end mb-4">
-          <div className="flex border rounded-md overflow-hidden">
-            <Button
-              variant={viewType === "quadrant" ? "default" : "ghost"}
-              size="sm"
-              className="flex-1 rounded-none text-xs sm:text-sm"
-              onClick={() => setViewType("quadrant")}
-            >
-              四象限
-            </Button>
-            <Button
-              variant={viewType === "category" ? "default" : "ghost"}
-              size="sm"
-              className="flex-1 rounded-none text-xs sm:text-sm"
-              onClick={() => setViewType("category")}
-            >
-              分类
-            </Button>
-            <Button
-              variant={viewType === "simple" ? "default" : "ghost"}
-              size="sm"
-              className="flex-1 rounded-none text-xs sm:text-sm"
-              onClick={() => setViewType("simple")}
-            >
-              精简
-            </Button>
-          </div>
-          <Dialog open={showTagManager} onOpenChange={setShowTagManager}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="sm:ml-2">
-                <LucideTag className="mr-2 h-4 w-4" /> 管理标签
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>标签管理</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="新标签名称"
-                    value={newTagName}
-                    onChange={(e) => setNewTagName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") addTag()
-                    }}
-                  />
-                  <Button onClick={addTag}>添加</Button>
-                </div>
-                <div className="space-y-2">
-                  {tags.map((tag) => (
-                    <div key={tag.id} className="flex justify-between items-center p-2 border rounded">
-                      <span>{tag.name}</span>
-                      <Button variant="ghost" size="icon" onClick={() => deleteTagItem(tag.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div className="flex flex-col sm:flex-row gap-2 justify-end mb-6">
+          <ButtonGroup 
+            variant="glass" 
+            size="sm" 
+            activeIndex={
+              viewType === "quadrant" ? 0 :
+              viewType === "category" ? 1 : 2
+            }
+            onActiveIndexChange={(index) => {
+              switch(index) {
+                case 0: setViewType("quadrant"); break;
+                case 1: setViewType("category"); break;
+                case 2: setViewType("simple"); break;
+              }
+            }}
+            className="w-full sm:w-auto"
+          >
+            <ButtonGroupItem>四象限</ButtonGroupItem>
+            <ButtonGroupItem>分类</ButtonGroupItem>
+            <ButtonGroupItem>精简</ButtonGroupItem>
+          </ButtonGroup>
         </div>
 
         {/* 任务视图区域 */}
         {viewType === "quadrant" ? (
           // 四象限视图
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {quadrants.map((quadrant) => (
-              <div key={quadrant.id} className={cn("border rounded-lg p-4", quadrant.bgColor, quadrant.borderColor)}>
-                <div className="mb-2 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-lg font-bold">{quadrant.title}</h2>
-                    <p className="text-sm text-gray-600">{quadrant.subtitle}</p>
+              <div 
+                key={quadrant.id} 
+                className={cn(
+                  "quadrant-card p-5 rounded-2xl transition-all", 
+                  quadrant.bgColor, 
+                  quadrant.borderColor
+                )}
+              >
+                <div className="mb-3 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{quadrant.icon}</span>
+                    <div>
+                      <h2 className={cn("text-lg font-bold", quadrant.color)}>{quadrant.title}</h2>
+                      <p className="text-sm text-gray-500">{quadrant.subtitle}</p>
+                    </div>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="rounded-full hover:bg-white/50"
                     onClick={() => {
                       setTaskForm({
                         ...taskForm,
@@ -646,12 +667,12 @@ export default function Dashboard() {
                       setIsEditing(true);
                     }}
                   >
-                    <PlusCircle className="h-5 w-5" />
+                    <PlusCircle className={cn("h-5 w-5", quadrant.color)} />
                   </Button>
                 </div>
-                <div className="text-right text-sm mb-2">{getQuadrantTasks(quadrant.id).length} 项</div>
+                <div className="text-right text-xs text-gray-500 mb-2">{getQuadrantTasks(quadrant.id).length} 项</div>
 
-                <div className="space-y-2 h-[250px] sm:h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                <div className="space-y-2 h-[250px] sm:h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                   {getQuadrantTasks(quadrant.id).length > 0 ? (
                     getQuadrantTasks(quadrant.id).map((task) => (
                       <TaskItem
@@ -666,7 +687,7 @@ export default function Dashboard() {
                       />
                     ))
                   ) : (
-                    <div className="text-center text-gray-500 py-4">暂无任务</div>
+                    <div className="text-center text-gray-400 py-10 rounded-xl bg-white/30 backdrop-blur-sm">暂无任务</div>
                   )}
                 </div>
               </div>
@@ -674,7 +695,7 @@ export default function Dashboard() {
           </div>
         ) : viewType === "category" ? (
           // 分类视图
-          <div className="space-y-4">
+          <div className="space-y-6">
             {tags.length > 0 ? (
               tags
                 .map((tag) => {
@@ -682,11 +703,11 @@ export default function Dashboard() {
                   if (tagTasks.length === 0) return null
 
                   return (
-                    <div key={tag.id} className="border rounded-lg p-4">
-                      <div className="mb-2">
+                    <div key={tag.id} className="glass-card p-5">
+                      <div className="mb-4">
                         <h2 className="text-lg font-bold flex items-center">
-                          <Badge className="mr-2">{tag.name}</Badge>
-                          <span className="text-sm text-gray-600">({tagTasks.length} 项)</span>
+                          <Badge className="mr-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600">{tag.name}</Badge>
+                          <span className="text-sm text-gray-500">({tagTasks.length} 项)</span>
                         </h2>
                       </div>
                       <div className="space-y-2">
@@ -708,7 +729,7 @@ export default function Dashboard() {
                 })
                 .filter((item): item is JSX.Element => item !== null)
             ) : (
-              <div className="text-center text-gray-500 py-4 border rounded-lg p-4">暂无标签，请先添加标签</div>
+              <div className="text-center text-gray-500 py-8 glass-card">暂无标签，请先添加标签</div>
             )}
 
             {/* 无标签任务 */}
@@ -717,11 +738,11 @@ export default function Dashboard() {
               if (noTagTasks.length === 0) return null
 
               return (
-                <div className="border rounded-lg p-4">
-                  <div className="mb-2">
+                <div className="glass-card p-5">
+                  <div className="mb-4">
                     <h2 className="text-lg font-bold flex items-center">
                       <span>未分类</span>
-                      <span className="text-sm text-gray-600 ml-2">({noTagTasks.length} 项)</span>
+                      <span className="text-sm text-gray-500 ml-2">({noTagTasks.length} 项)</span>
                     </h2>
                   </div>
                   <div className="space-y-2">
@@ -744,10 +765,10 @@ export default function Dashboard() {
           </div>
         ) : (
           // 精简视图
-          <div className="border rounded-lg p-4">
-            <div className="mb-2">
+          <div className="glass-card p-5">
+            <div className="mb-4">
               <h2 className="text-lg font-bold">所有任务</h2>
-              <p className="text-sm text-gray-600">按创建时间排序</p>
+              <p className="text-sm text-gray-500">按创建时间排序</p>
             </div>
             <div className="space-y-2">
               {getActiveTasks().length > 0 ? (
@@ -766,7 +787,7 @@ export default function Dashboard() {
                     />
                   ))
               ) : (
-                <div className="text-center text-gray-500 py-4">暂无任务</div>
+                <div className="text-center text-gray-400 py-10 rounded-xl bg-white/30 backdrop-blur-sm">暂无任务</div>
               )}
             </div>
           </div>
@@ -775,15 +796,18 @@ export default function Dashboard() {
         {/* 已完成任务区域 */}
         <div className="mt-8">
           <div
-            className="flex justify-between items-center p-2 bg-gray-100 rounded cursor-pointer"
+            className="flex justify-between items-center p-3 glass-morphism rounded-xl cursor-pointer hover:bg-white/90 transition-all"
             onClick={() => setShowCompleted(!showCompleted)}
           >
-            <h2 className="font-bold">已完成任务 ({getCompletedTasks().length})</h2>
-            <span>{showCompleted ? "收起" : "展开"}</span>
+            <h2 className="font-bold flex items-center">
+              <Check className="h-4 w-4 mr-2 text-green-500" />
+              已完成任务 ({getCompletedTasks().length})
+            </h2>
+            <span className="text-sm text-gray-500">{showCompleted ? "收起" : "展开"}</span>
           </div>
 
           {showCompleted && (
-            <div className="mt-2 space-y-2">
+            <div className="mt-3 space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
               {getCompletedTasks().length > 0 ? (
                 getCompletedTasks().map((task) => (
                   <TaskItem
@@ -798,7 +822,7 @@ export default function Dashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center text-gray-500 py-4">暂无已完成任务</div>
+                <div className="text-center text-gray-400 py-6 rounded-xl bg-white/30 backdrop-blur-sm">暂无已完成任务</div>
               )}
             </div>
           )}
@@ -815,52 +839,74 @@ export default function Dashboard() {
             }
           }}
         >
-          <DialogContent className="sm:max-w-[1000px] h-[90vh] flex flex-col">
+          <DialogContent className="glass-card border-0 sm:max-w-[1000px] h-[90vh] flex flex-col">
             <DialogHeader>
-              <DialogTitle>{editingTask ? "编辑任务" : "添加任务"}</DialogTitle>
+              <DialogTitle className="text-xl text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+                {editingTask ? "编辑任务" : "添加任务"}
+              </DialogTitle>
             </DialogHeader>
-            <div className="space-y-6 flex-1 overflow-y-auto pr-2">
+            <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
               {/* 任务名称 - 独占一行 */}
               <div className="col-span-full">
-                <label className="text-sm font-medium mb-2 block">任务名称</label>
+                <label className="text-sm font-medium mb-2 block text-gray-700">任务名称</label>
                 <Input
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
                   placeholder="输入任务名称"
-                  className="w-full h-12 text-lg"
+                  className="w-full h-12 text-lg glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
                 />
               </div>
 
               {/* 优先级、完成时间和标签 - 共占一行 */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div>
-                  <label className="text-sm font-medium mb-2 block">优先级（象限）</label>
+                  <label className="text-sm font-medium mb-2 block text-gray-700">优先级（象限）</label>
                   <Select
                     value={taskForm.quadrant.toString()}
                     onValueChange={(value) =>
                       setTaskForm({ ...taskForm, quadrant: Number.parseInt(value) as 1 | 2 | 3 | 4 })
                     }
                   >
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-12 glass-morphism border-0 focus:ring-1 focus:ring-purple-400">
                       <SelectValue placeholder="选择象限" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">象限一 - 紧急且重要</SelectItem>
-                      <SelectItem value="2">象限二 - 重要不紧急</SelectItem>
-                      <SelectItem value="3">象限三 - 紧急不重要</SelectItem>
-                      <SelectItem value="4">象限四 - 不紧急不重要</SelectItem>
+                    <SelectContent className="glass-morphism border-0">
+                      <SelectItem value="1">
+                        <div className="flex items-center">
+                          <span className="mr-2">⚡</span>
+                          象限一 - 紧急且重要
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="2">
+                        <div className="flex items-center">
+                          <span className="mr-2">🎯</span>
+                          象限二 - 重要不紧急
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="3">
+                        <div className="flex items-center">
+                          <span className="mr-2">⏱️</span>
+                          象限三 - 紧急不重要
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="4">
+                        <div className="flex items-center">
+                          <span className="mr-2">🌱</span>
+                          象限四 - 不紧急不重要
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">预计完成时间</label>
+                  <label className="text-sm font-medium mb-2 block text-gray-700">预计完成时间</label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       type="date"
                       value={getCurrentDate()}
                       onChange={handleDateChange}
-                      className="flex-1"
+                      className="flex-1 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
                     />
                     {/*<Input*/}
                     {/*  type="time"*/}
@@ -872,15 +918,15 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-2 block">标签</label>
+                  <label className="text-sm font-medium mb-2 block text-gray-700">标签</label>
                   <Select
                     value={taskForm.tags.join(",")}
                     onValueChange={(value) => setTaskForm({ ...taskForm, tags: value ? value.split(",") : [] })}
                   >
-                    <SelectTrigger className="h-12">
+                    <SelectTrigger className="h-12 glass-morphism border-0 focus:ring-1 focus:ring-purple-400">
                       <SelectValue placeholder="选择标签" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="glass-morphism border-0">
                       {tags.map((tag) => (
                         <SelectItem key={tag.id} value={tag.name}>
                           {tag.name}
@@ -894,13 +940,13 @@ export default function Dashboard() {
               {/* 备注区域 - 独占一行，更大的空间 */}
               <div className="flex-1 h-full">
                 <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium">任务详情</label>
+                  <label className="text-sm font-medium text-gray-700">任务详情</label>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => generateTaskAnalysis(taskForm.title)}
                     disabled={!taskForm.title.trim() || isGeneratingNotes}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 glass-button rounded-full"
                   >
                     {isGeneratingNotes ? (
                       <>
@@ -929,7 +975,7 @@ export default function Dashboard() {
                     onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
                     placeholder="输入备注信息"
                     className={cn(
-                      "min-h-[300px] h-full resize-none text-base leading-relaxed p-4",
+                      "min-h-[300px] h-full resize-none text-base leading-relaxed p-4 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400",
                       isGeneratingNotes && "opacity-50"
                     )}
                     disabled={isGeneratingNotes}
@@ -938,7 +984,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <DialogFooter className="mt-8 py-4 border-t">
+            <DialogFooter className="mt-6 py-4 border-t border-gray-100/50">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -946,11 +992,14 @@ export default function Dashboard() {
                   setEditingTask(null)
                   resetTaskForm()
                 }}
-                className="px-6"
+                className="px-6 glass-button"
               >
                 取消
               </Button>
-              <Button onClick={editingTask ? saveEditedTask : addTask} className="px-6">
+              <Button 
+                onClick={editingTask ? saveEditedTask : addTask} 
+                className="px-6 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
+              >
                 {editingTask ? "保存" : "添加"}
               </Button>
             </DialogFooter>
@@ -984,7 +1033,7 @@ function TaskItem({
   onToggleComplete: () => void
   onAddSubtask: () => void
   viewType?: ViewType
-  quadrantInfo?: { title: string; bgColor: string; borderColor: string }
+  quadrantInfo?: { title: string; bgColor: string; borderColor: string; icon?: string; color?: string }
 }) {
   // 检查日期是否已过期
   const isDateOverdue = (dateString: string | null) => {
@@ -1008,69 +1057,81 @@ function TaskItem({
   }
 
   return (
-    <div className={cn("border rounded p-3 bg-white", task.completed && "opacity-70")}>
+    <div className={cn(
+      "task-item p-3 group", 
+      task.completed && "task-item-completed opacity-70"
+    )}>
       <div className="flex justify-between">
         <div className="flex items-start gap-2">
-          <Button variant="ghost" size="icon" className="h-6 w-6 mt-0.5" onClick={onToggleComplete}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6 mt-0.5 rounded-full hover:bg-white/70" 
+            onClick={onToggleComplete}
+          >
             <div
               className={cn(
-                "h-4 w-4 rounded-full border",
-                task.completed ? "bg-primary border-primary" : "border-gray-300",
+                "h-4 w-4 rounded-full border transition-colors",
+                task.completed ? "bg-gradient-to-r from-purple-500 to-indigo-500 border-0" : "border-gray-300",
               )}
             >
               {task.completed && <Check className="h-3 w-3 text-white" />}
             </div>
           </Button>
-          <div>
-            <h3 className={cn("font-medium", task.completed && "line-through")}>{task.title}</h3>
+          <div className="min-w-0 flex-1">
+            <h3 className={cn("font-medium truncate", task.completed && "line-through text-gray-400")}>
+              {quadrantInfo?.icon && <span className="mr-1 text-xs">{quadrantInfo.icon}</span>} {task.title}
+            </h3>
 
             {/* 根据视图类型显示不同的内容 */}
-            {viewType === "quadrant" && (
+            {viewType === "quadrant" ? (
               <>
                 {task.due_date && (
                   <div className={cn(
-                    "text-xs mt-1",
+                    "text-xs mt-1 flex items-center",
                     isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
                   )}>
-                    截止日期: {formatDateTime(task.due_date)}
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {formatDateTime(task.due_date)}
                   </div>
                 )}
                 {task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="secondary" className="text-xs px-2 py-0 h-5 bg-white/70 text-gray-600 hover:bg-white">
                         {tag}
                       </Badge>
                     ))}
                   </div>
                 )}
               </>
-            )}
-
-            {viewType === "category" && (
+            ) : (
               <>
-                {task.due_date && (
-                  <div className={cn(
-                    "text-xs mt-1",
-                    isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
-                  )}>
-                    截止日期: {formatDateTime(task.due_date)}
-                  </div>
-                )}
-                {quadrantInfo && (
-                  <Badge variant="outline" className="mt-1">
-                    {quadrantInfo.title}
-                  </Badge>
-                )}
-              </>
-            )}
-
-            {viewType === "simple" && (
-              <>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {quadrantInfo && (
+                    <Badge className={cn(
+                      "text-xs",
+                      quadrantInfo.color ? quadrantInfo.color.replace("text-", "bg-").replace("-500", "-100") : "",
+                      quadrantInfo.color?.replace("text-", "text-")
+                    )}>
+                      {quadrantInfo.title}
+                    </Badge>
+                  )}
+                  {task.due_date && (
+                    <Badge variant="outline" className={cn(
+                      "text-xs border-0",
+                      isDateOverdue(task.due_date) ? "text-red-500 font-medium bg-red-50" : "text-gray-500 bg-gray-100/50"
+                    )}>
+                      {formatDateTime(task.due_date)}
+                    </Badge>
+                  )}
+                </div>
                 {task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="secondary" className="text-xs px-2 py-0 h-5 bg-white/70 text-gray-600 hover:bg-white">
                         {tag}
                       </Badge>
                     ))}
@@ -1080,15 +1141,15 @@ function TaskItem({
             )}
           </div>
         </div>
-        <div className="flex gap-1">
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddSubtask}>
-            <ListTree className="h-3 w-3" />
+        <div className="flex items-start gap-1 opacity-20 group-hover:opacity-100 transition-all duration-200">
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/70" onClick={onAddSubtask}>
+            <ListTree className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onEdit}>
-            <Edit className="h-3 w-3" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/70" onClick={onEdit}>
+            <Edit className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onDelete}>
-            <Trash2 className="h-3 w-3" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/70" onClick={onDelete}>
+            <Trash2 className="h-3.5 w-3.5 text-gray-500 hover:text-red-500" />
           </Button>
         </div>
       </div>
