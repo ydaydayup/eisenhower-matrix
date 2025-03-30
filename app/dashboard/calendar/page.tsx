@@ -144,6 +144,17 @@ export default function CalendarView() {
           userId={user?.id || ''}
           tags={tags}
         />
+
+        <Button 
+          onClick={() => {
+            toast({
+              title: "测试消息",
+              description: "这是一条测试消息",
+            })
+          }}
+        >
+          测试 Toast
+        </Button>
       </div>
     </main>
   )
