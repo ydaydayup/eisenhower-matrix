@@ -17,6 +17,7 @@ import { type Tag, getUserTags, createTag, deleteTag } from "@/lib/tags"
 import { format } from "date-fns"
 import { SubtaskSidebar } from "@/components/SubtaskSidebar"
 import { ButtonGroup, ButtonGroupItem } from "@/components/ui/button-group"
+import TaskEditModal from "@/components/TaskEditModal"
 
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
@@ -36,21 +37,12 @@ export default function Dashboard() {
   const { toast } = useToast()
 
   // 编辑任务状态
-  const [isEditing, setIsEditing] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
   // 标签管理状态
   const [showTagManager, setShowTagManager] = useState(false)
   const [newTagName, setNewTagName] = useState("")
-
-  // 任务表单状态
-  const [taskForm, setTaskForm] = useState({
-    title: "",
-    quadrant: 1 as 1 | 2 | 3 | 4,
-    due_date: "",
-    tags: [] as string[],
-    notes: "",
-  })
 
   const [subtaskOpen, setSubtaskOpen] = useState(false)
   const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState<Task | null>(null)
@@ -98,91 +90,23 @@ export default function Dashboard() {
     }
   }
 
-  // 添加新任务
-  const addTask = async () => {
-    if (!user || taskForm.title.trim() === "") return
-
-    try {
-      const newTaskData = {
-        user_id: user.id,
-        title: taskForm.title,
-        quadrant: taskForm.quadrant,
-        due_date: taskForm.due_date || null,
-        tags: taskForm.tags,
-        notes: taskForm.notes,
-        completed: false,
-      }
-
-      const createdTask = await createTask(newTaskData)
-      if (createdTask) {
-        setTasks([createdTask, ...tasks])
-        resetTaskForm()
-        setIsEditing(false)
-      }
-    } catch (error) {
-      console.error("Error adding task:", error)
-      toast({
-        title: "添加失败",
-        description: "无法添加任务，请稍后再试",
-        variant: "destructive",
-      })
+  // 处理任务创建或更新成功
+  const handleTaskSuccess = (updatedTask: Task) => {
+    if (editingTask) {
+      // 更新现有任务
+      setTasks(tasks.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      ))
+    } else {
+      // 添加新任务
+      setTasks([updatedTask, ...tasks])
     }
   }
 
-  // 重置任务表单
-  const resetTaskForm = () => {
-    setTaskForm({
-      title: "",
-      quadrant: 1,
-      due_date: "",
-      tags: [],
-      notes: "",
-    })
-  }
-
-  // 编辑任务
-  const startEditTask = (task: Task) => {
-    setEditingTask(task)
-    setTaskForm({
-      title: task.title,
-      quadrant: task.quadrant,
-      due_date: task.due_date || "",
-      tags: task.tags,
-      notes: task.notes,
-    })
-    setIsEditing(true)
-  }
-
-  // 保存编辑后的任务
-  const saveEditedTask = async () => {
-    if (!editingTask || taskForm.title.trim() === "") return
-
-    try {
-      console.log("待办页面保存任务，截止日期:", taskForm.due_date)
-      const updatedTask = await updateTask(editingTask.id, {
-        title: taskForm.title,
-        quadrant: taskForm.quadrant,
-        due_date: taskForm.due_date || null,
-        tags: taskForm.tags,
-        notes: taskForm.notes,
-      })
-
-      if (updatedTask) {
-        console.log("更新成功后的日期:", updatedTask.due_date)
-        setTasks(tasks.map((task) => (task.id === editingTask.id ? updatedTask : task)))
-      }
-    } catch (error) {
-      console.error("Error updating task:", error)
-      toast({
-        title: "更新失败",
-        description: "无法更新任务，请稍后再试",
-        variant: "destructive",
-      })
-    } finally {
-      setIsEditing(false)
-      setEditingTask(null)
-      resetTaskForm()
-    }
+  // 打开编辑模态框
+  const openEditModal = (task?: Task) => {
+    setEditingTask(task || null)
+    setEditModalOpen(true)
   }
 
   // 切换任务完成状态
@@ -286,15 +210,15 @@ export default function Dashboard() {
 
   // 切换任务标签
   const toggleTaskTag = (tagName: string) => {
-    if (taskForm.tags.includes(tagName)) {
-      setTaskForm({
-        ...taskForm,
-        tags: taskForm.tags.filter((t) => t !== tagName),
+    if (editingTask?.tags.includes(tagName)) {
+      setEditingTask({
+        ...editingTask,
+        tags: editingTask.tags.filter((t) => t !== tagName),
       })
     } else {
-      setTaskForm({
-        ...taskForm,
-        tags: [...taskForm.tags, tagName],
+      setEditingTask({
+        ...editingTask,
+        tags: [...editingTask.tags, tagName],
       })
     }
   }
@@ -376,7 +300,7 @@ export default function Dashboard() {
     if (!taskTitle.trim()) return
 
     setIsGeneratingNotes(true)
-    setTaskForm(prev => ({
+    setEditingTask(prev => ({
       ...prev,
       notes: '' // 清空现有笔记
     }))
@@ -407,7 +331,7 @@ export default function Dashboard() {
         accumulatedNotes += text
 
         // 更新表单状态
-        setTaskForm(prev => ({
+        setEditingTask(prev => ({
           ...prev,
           notes: accumulatedNotes
         }))
@@ -429,9 +353,9 @@ export default function Dashboard() {
     const date = e.target.value
     // 如果有时间，保留原有时间；没有则使用默认时间
     let timeString = '00:00'
-    if (taskForm.due_date) {
+    if (editingTask?.due_date) {
       try {
-        const dateObj = new Date(taskForm.due_date)
+        const dateObj = new Date(editingTask.due_date)
         if (!isNaN(dateObj.getTime())) {
           timeString = dateObj.toLocaleTimeString('en-US', { 
             hour12: false,
@@ -443,16 +367,16 @@ export default function Dashboard() {
         console.error('Date parsing error:', error)
       }
     }
-    setTaskForm({ ...taskForm, due_date: date ? `${date}T${timeString}` : '' })
+    setEditingTask({ ...editingTask, due_date: date ? `${date}T${timeString}` : '' })
   }
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = e.target.value
     // 如果有日期，保留原有日期；没有则使用当前日期
     let dateString = format(new Date(), 'yyyy-MM-dd')
-    if (taskForm.due_date) {
+    if (editingTask?.due_date) {
       try {
-        const dateObj = new Date(taskForm.due_date)
+        const dateObj = new Date(editingTask.due_date)
         if (!isNaN(dateObj.getTime())) {
           dateString = format(dateObj, 'yyyy-MM-dd')
         }
@@ -460,13 +384,13 @@ export default function Dashboard() {
         console.error('Date parsing error:', error)
       }
     }
-    setTaskForm({ ...taskForm, due_date: `${dateString}T${time}` })
+    setEditingTask({ ...editingTask, due_date: `${dateString}T${time}` })
   }
 
   const getCurrentDate = () => {
-    if (!taskForm.due_date) return ''
+    if (!editingTask?.due_date) return ''
     try {
-      const dateObj = new Date(taskForm.due_date)
+      const dateObj = new Date(editingTask.due_date)
       if (!isNaN(dateObj.getTime())) {
         return format(dateObj, 'yyyy-MM-dd')
       }
@@ -477,9 +401,9 @@ export default function Dashboard() {
   }
 
   const getCurrentTime = () => {
-    if (!taskForm.due_date) return ''
+    if (!editingTask?.due_date) return ''
     try {
-      const dateObj = new Date(taskForm.due_date)
+      const dateObj = new Date(editingTask.due_date)
       if (!isNaN(dateObj.getTime())) {
         return dateObj.toLocaleTimeString('en-US', { 
           hour12: false, 
@@ -493,25 +417,7 @@ export default function Dashboard() {
     return ''
   }
 
-  // 更新表单中的日期选择部分
-  // <div>
-  //   <label className="text-base font-medium">预计完成时间</label>
-  //   <div className="flex gap-2 mt-2">
-  //     <Input
-  //       type="date"
-  //       value={getCurrentDate()}
-  //       onChange={handleDateChange}
-  //       className="flex-1"
-  //     />
-  //     <Input
-  //       type="time"
-  //       value={getCurrentTime()}
-  //       onChange={handleTimeChange}
-  //       className="flex-1"
-  //     />
-  //   </div>
-  // </div>
-
+ 
   // 更新 isDateOverdue 函数
   const isDateOverdue = (dateString: string | null) => {
     if (!dateString) return false
@@ -562,10 +468,7 @@ export default function Dashboard() {
           <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">待办事项</h1>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
             <Button 
-              onClick={() => {
-                resetTaskForm();
-                setIsEditing(true);
-              }} 
+              onClick={() => openEditModal()} 
               className="glass-button bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:shadow-lg transition-all px-4 py-2 rounded-full"
             >
               <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
@@ -660,11 +563,11 @@ export default function Dashboard() {
                     size="icon"
                     className="rounded-full hover:bg-white/50"
                     onClick={() => {
-                      setTaskForm({
-                        ...taskForm,
+                      setEditingTask({
+                        ...editingTask,
                         quadrant: quadrant.id as 1 | 2 | 3 | 4
                       });
-                      setIsEditing(true);
+                      openEditModal();
                     }}
                   >
                     <PlusCircle className={cn("h-5 w-5", quadrant.color)} />
@@ -678,7 +581,7 @@ export default function Dashboard() {
                       <TaskItem
                         key={task.id}
                         task={task}
-                        onEdit={() => startEditTask(task)}
+                        onEdit={() => openEditModal(task)}
                         onDelete={() => deleteTaskItem(task.id)}
                         onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
                         onAddSubtask={() => openSubtaskSidebar(task)}
@@ -715,7 +618,7 @@ export default function Dashboard() {
                           <TaskItem
                             key={task.id}
                             task={task}
-                            onEdit={() => startEditTask(task)}
+                            onEdit={() => openEditModal(task)}
                             onDelete={() => deleteTaskItem(task.id)}
                             onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
                             onAddSubtask={() => openSubtaskSidebar(task)}
@@ -750,7 +653,7 @@ export default function Dashboard() {
                       <TaskItem
                         key={task.id}
                         task={task}
-                        onEdit={() => startEditTask(task)}
+                        onEdit={() => openEditModal(task)}
                         onDelete={() => deleteTaskItem(task.id)}
                         onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
                         onAddSubtask={() => openSubtaskSidebar(task)}
@@ -778,7 +681,7 @@ export default function Dashboard() {
                     <TaskItem
                       key={task.id}
                       task={task}
-                      onEdit={() => startEditTask(task)}
+                      onEdit={() => openEditModal(task)}
                       onDelete={() => deleteTaskItem(task.id)}
                       onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
                       onAddSubtask={() => openSubtaskSidebar(task)}
@@ -813,7 +716,7 @@ export default function Dashboard() {
                   <TaskItem
                     key={task.id}
                     task={task}
-                    onEdit={() => startEditTask(task)}
+                    onEdit={() => openEditModal(task)}
                     onDelete={() => deleteTaskItem(task.id)}
                     onToggleComplete={() => toggleTaskCompletion(task.id, task.completed)}
                     onAddSubtask={() => openSubtaskSidebar(task)}
@@ -828,183 +731,20 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* 任务表单对话框 */}
-        <Dialog
-          open={isEditing}
+        {/* 替换原有的 Dialog 为新的 TaskEditModal */}
+        <TaskEditModal
+          open={editModalOpen}
+          task={editingTask}
           onOpenChange={(open) => {
+            setEditModalOpen(open)
             if (!open) {
-              setIsEditing(false)
               setEditingTask(null)
-              resetTaskForm()
             }
           }}
-        >
-          <DialogContent className="glass-card border-0 sm:max-w-[1000px] h-[90vh] flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="text-xl text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
-                {editingTask ? "编辑任务" : "添加任务"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              {/* 任务名称 - 独占一行 */}
-              <div className="col-span-full">
-                <label className="text-sm font-medium mb-2 block text-gray-700">任务名称</label>
-                <Input
-                  value={taskForm.title}
-                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                  placeholder="输入任务名称"
-                  className="w-full h-12 text-lg glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
-                />
-              </div>
-
-              {/* 优先级、完成时间和标签 - 共占一行 */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700">优先级（象限）</label>
-                  <Select
-                    value={taskForm.quadrant.toString()}
-                    onValueChange={(value) =>
-                      setTaskForm({ ...taskForm, quadrant: Number.parseInt(value) as 1 | 2 | 3 | 4 })
-                    }
-                  >
-                    <SelectTrigger className="h-12 glass-morphism border-0 focus:ring-1 focus:ring-purple-400">
-                      <SelectValue placeholder="选择象限" />
-                    </SelectTrigger>
-                    <SelectContent className="glass-morphism border-0">
-                      <SelectItem value="1">
-                        <div className="flex items-center">
-                          <span className="mr-2">⚡</span>
-                          象限一 - 紧急且重要
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="2">
-                        <div className="flex items-center">
-                          <span className="mr-2">🎯</span>
-                          象限二 - 重要不紧急
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="3">
-                        <div className="flex items-center">
-                          <span className="mr-2">⏱️</span>
-                          象限三 - 紧急不重要
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="4">
-                        <div className="flex items-center">
-                          <span className="mr-2">🌱</span>
-                          象限四 - 不紧急不重要
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700">预计完成时间</label>
-                  <div className="flex gap-2 mt-2">
-                    <Input
-                      type="date"
-                      value={getCurrentDate()}
-                      onChange={handleDateChange}
-                      className="flex-1 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
-                    />
-                    {/*<Input*/}
-                    {/*  type="time"*/}
-                    {/*  value={getCurrentTime()}*/}
-                    {/*  onChange={handleTimeChange}*/}
-                    {/*  className="flex-1"*/}
-                    {/*/>*/}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block text-gray-700">标签</label>
-                  <Select
-                    value={taskForm.tags.join(",")}
-                    onValueChange={(value) => setTaskForm({ ...taskForm, tags: value ? value.split(",") : [] })}
-                  >
-                    <SelectTrigger className="h-12 glass-morphism border-0 focus:ring-1 focus:ring-purple-400">
-                      <SelectValue placeholder="选择标签" />
-                    </SelectTrigger>
-                    <SelectContent className="glass-morphism border-0">
-                      {tags.map((tag) => (
-                        <SelectItem key={tag.id} value={tag.name}>
-                          {tag.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* 备注区域 - 独占一行，更大的空间 */}
-              <div className="flex-1 h-full">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium text-gray-700">任务详情</label>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => generateTaskAnalysis(taskForm.title)}
-                    disabled={!taskForm.title.trim() || isGeneratingNotes}
-                    className="flex items-center gap-2 glass-button rounded-full"
-                  >
-                    {isGeneratingNotes ? (
-                      <>
-                        <div className="h-3 w-3 animate-spin rounded-full border-b-2 border-primary" />
-                        生成中...
-                      </>
-                    ) : (
-                      <>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                          <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-                        </svg>
-                        智能分析
-                      </>
-                    )}
-                  </Button>
-                </div>
-                <div className="relative h-full">
-                  <Textarea
-                    value={taskForm.notes}
-                    onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
-                    placeholder="输入备注信息"
-                    className={cn(
-                      "min-h-[300px] h-full resize-none text-base leading-relaxed p-4 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400",
-                      isGeneratingNotes && "opacity-50"
-                    )}
-                    disabled={isGeneratingNotes}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter className="mt-6 py-4 border-t border-gray-100/50">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsEditing(false)
-                  setEditingTask(null)
-                  resetTaskForm()
-                }}
-                className="px-6 glass-button"
-              >
-                取消
-              </Button>
-              <Button 
-                onClick={editingTask ? saveEditedTask : addTask} 
-                className="px-6 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-md hover:shadow-lg"
-              >
-                {editingTask ? "保存" : "添加"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          onSuccess={handleTaskSuccess}
+          userId={user?.id || ''}
+          tags={tags}
+        />
 
         {/* 子任务侧边栏 */}
         <SubtaskSidebar

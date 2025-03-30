@@ -57,4 +57,8 @@ USING (
         SELECT id FROM public.tasks 
         WHERE user_id = auth.uid()
     )
-); 
+);
+
+ALTER TABLE tasks
+ALTER COLUMN due_date TYPE TIMESTAMP WITH TIME ZONE
+USING due_date::TIMESTAMP WITH TIME ZONE;

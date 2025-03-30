@@ -35,10 +35,10 @@ export default function RootLayout({
         <div className="fixed bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-gradient-to-r from-purple-100/30 to-pink-100/30 blur-3xl" />
         
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <Toaster />
           <main className="relative z-10">
             {children}
           </main>
-          <Toaster />
         </ThemeProvider>
       </body>
     </html>

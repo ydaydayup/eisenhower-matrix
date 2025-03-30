@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle } from "lucide-react"
 
 export default function CalendarView() {
+  const router = useRouter()
+  const { toast } = useToast()
+  
   const [tasks, setTasks] = useState<Task[]>([])
   const [tags, setTags] = useState<Tag[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -19,15 +22,7 @@ export default function CalendarView() {
   const [isCreating, setIsCreating] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [taskForm, setTaskForm] = useState({
-    title: "",
-    quadrant: 1 as 1 | 2 | 3 | 4,
-    due_date: "",
-    tags: [] as string[],
-    notes: "",
-  })
-  const router = useRouter()
-  const { toast } = useToast()
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
 
   // 获取用户会话
   useEffect(() => {
@@ -74,104 +69,14 @@ export default function CalendarView() {
 
   const handleSelectDate = (date: Date) => {
     console.log("选择的日期:", date)
-    // 设置选中日期为任务表单的默认日期
-    setTaskForm(prev => ({
-      ...prev,
-      due_date: date.toISOString().split('T')[0]
-    }))
-  }
-
-  // 添加新任务
-  const addTask = async () => {
-    if (!user || taskForm.title.trim() === "") return
-
-    try {
-      const newTaskData = {
-        user_id: user.id,
-        title: taskForm.title,
-        quadrant: taskForm.quadrant,
-        due_date: taskForm.due_date || null,
-        tags: taskForm.tags,
-        notes: taskForm.notes,
-        completed: false,
-      }
-
-      const createdTask = await createTask(newTaskData)
-      if (createdTask) {
-        setTasks([createdTask, ...tasks])
-        resetTaskForm()
-        setIsCreating(false)
-        toast({
-          title: "添加成功",
-          description: "任务已添加到日历",
-        })
-      }
-    } catch (error) {
-      console.error("Error adding task:", error)
-      toast({
-        title: "添加失败",
-        description: "无法添加任务，请稍后再试",
-        variant: "destructive",
-      })
-    }
-  }
-
-  // 重置任务表单
-  const resetTaskForm = () => {
-    setTaskForm({
-      title: "",
-      quadrant: 1,
-      due_date: "",
-      tags: [],
-      notes: "",
-    })
+    setSelectedDate(date)
+    setIsCreating(true)
   }
 
   // 编辑任务
   const startEditTask = (task: Task) => {
     setSelectedTask(task)
-    setTaskForm({
-      title: task.title,
-      quadrant: task.quadrant,
-      due_date: task.due_date || "",
-      tags: task.tags,
-      notes: task.notes,
-    })
     setIsEditing(true)
-  }
-
-  // 保存编辑后的任务
-  const saveEditedTask = async () => {
-    if (!selectedTask || taskForm.title.trim() === "") return
-
-    try {
-      const updatedTask = await updateTask(selectedTask.id, {
-        title: taskForm.title,
-        quadrant: taskForm.quadrant,
-        due_date: taskForm.due_date || null,
-        tags: taskForm.tags,
-        notes: taskForm.notes,
-      })
-
-      if (updatedTask) {
-        setTasks(tasks.map((task) => (task.id === selectedTask.id ? updatedTask : task)))
-        toast({
-          title: "更新成功",
-          description: "任务已更新",
-        })
-      }
-    } catch (error) {
-      console.error("Error updating task:", error)
-      toast({
-        title: "更新失败",
-        description: "无法更新任务，请稍后再试",
-        variant: "destructive",
-      })
-    } finally {
-      setIsEditing(false)
-      setSelectedTask(null)
-      resetTaskForm()
-    }
   }
 
   return (
@@ -180,10 +85,7 @@ export default function CalendarView() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">日历视图</h1>
           <Button 
-            onClick={() => {
-              resetTaskForm()
-              setIsCreating(true)
-            }} 
+            onClick={() => setIsCreating(true)} 
             className="whitespace-nowrap"
           >
             <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
@@ -214,9 +116,14 @@ export default function CalendarView() {
               setSelectedTask(null)
             }
           }}
-          onSave={saveEditedTask}
-          taskForm={taskForm}
-          setTaskForm={setTaskForm}
+          onSuccess={(updatedTask) => {
+            setTasks(tasks.map(task => 
+              task.id === updatedTask.id ? updatedTask : task
+            ))
+            setIsEditing(false)
+            setSelectedTask(null)
+          }}
+          userId={user?.id || ''}
           tags={tags}
         />
         
@@ -227,14 +134,27 @@ export default function CalendarView() {
           onOpenChange={(open) => {
             if (!open) {
               setIsCreating(false)
-              resetTaskForm()
+              setSelectedDate(null)
             }
           }}
-          onSave={addTask}
-          taskForm={taskForm}
-          setTaskForm={setTaskForm}
+          onSuccess={(newTask) => {
+            setTasks([newTask, ...tasks])
+            setIsCreating(false)
+          }}
+          userId={user?.id || ''}
           tags={tags}
         />
+
+        <Button 
+          onClick={() => {
+            toast({
+              title: "测试消息",
+              description: "这是一条测试消息",
+            })
+          }}
+        >
+          测试 Toast
+        </Button>
       </div>
     </main>
   )

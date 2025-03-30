@@ -8,7 +8,7 @@ import { Check, Plus, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { type Task } from "@/lib/tasks"
 import { type Subtask, getTaskSubtasks, createSubtask, updateSubtask, deleteSubtask } from "@/lib/subtasks"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface SubtaskSidebarProps {
   open: boolean
