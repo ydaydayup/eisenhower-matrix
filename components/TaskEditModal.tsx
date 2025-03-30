@@ -16,20 +16,14 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Check, ChevronsUpDown } from "lucide-react"
+import { createTask, updateTask } from "@/lib/tasks"
 
 interface TaskEditModalProps {
   open: boolean
   task: Task | null
   onOpenChange: (open: boolean) => void
-  onSave: () => void
-  taskForm: {
-    title: string
-    quadrant: 1 | 2 | 3 | 4
-    due_date: string
-    tags: string[]
-    notes: string
-  }
-  setTaskForm: (form: any) => void
+  onSuccess: (task: Task) => void
+  userId: string
   tags?: Tag[]
 }
 
@@ -37,15 +31,23 @@ export default function TaskEditModal({
   open,
   task,
   onOpenChange,
-  onSave,
-  taskForm,
-  setTaskForm,
+  onSuccess,
+  userId,
   tags = [],
 }: TaskEditModalProps) {
   const { toast } = useToast()
   const titleInputRef = useRef<HTMLInputElement>(null)
   const [isAIGenerating, setIsAIGenerating] = useState(false)
   const [openTagSelect, setOpenTagSelect] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [taskForm, setTaskForm] = useState({
+    title: "",
+    quadrant: 1 as 1 | 2 | 3 | 4,
+    due_date: "",
+    tags: [] as string[],
+    notes: "",
+  })
 
   useEffect(() => {
     if (task) {
@@ -56,8 +58,16 @@ export default function TaskEditModal({
         tags: task.tags || [],
         notes: task.notes || "",
       })
+    } else {
+      setTaskForm({
+        title: "",
+        quadrant: 1,
+        due_date: "",
+        tags: [],
+        notes: "",
+      })
     }
-  }, [task, setTaskForm])
+  }, [task])
 
   useEffect(() => {
     if (open && titleInputRef.current) {
@@ -137,6 +147,55 @@ export default function TaskEditModal({
       console.error('Error parsing date:', error)
     }
     return ''
+  }
+
+  const handleSubmit = async () => {
+    if (!taskForm.title.trim()) {
+      toast({
+        title: "请输入任务标题",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const taskData = {
+        user_id: userId,
+        title: taskForm.title,
+        quadrant: taskForm.quadrant,
+        due_date: taskForm.due_date || null,
+        tags: taskForm.tags,
+        notes: taskForm.notes,
+        completed: false,
+      }
+
+      let result
+      if (task) {
+        result = await updateTask(task.id, taskData)
+      } else {
+        result = await createTask(taskData)
+      }
+
+      if (result) {
+        toast({
+          title: `${task ? '更新' : '创建'}成功`,
+          description: `任务已${task ? '更新' : '创建'}成功`,
+        })
+        onSuccess(result)
+        onOpenChange(false)
+      }
+    } catch (error) {
+      console.error(`Error ${task ? 'updating' : 'creating'} task:`, error)
+      toast({
+        title: `${task ? '更新' : '创建'}失败`,
+        description: `无法${task ? '更新' : '创建'}任务，请稍后再试`,
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -289,11 +348,26 @@ export default function TaskEditModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             取消
           </Button>
-          <Button onClick={onSave} className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-            确定
+          <Button 
+            onClick={handleSubmit} 
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                {task ? "更新中..." : "创建中..."}
+              </>
+            ) : (
+              task ? "更新" : "创建"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

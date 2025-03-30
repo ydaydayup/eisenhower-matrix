@@ -3,7 +3,7 @@
 import { getSupabaseClient } from "./supabase/client"
 
 // 定义任务类型
-export type Task = {
+export interface Task {
   id: string
   user_id: string
   title: string
