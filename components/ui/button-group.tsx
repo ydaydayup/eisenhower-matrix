@@ -118,10 +118,10 @@ const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps
           // Active state
           variant === "default" && isActive && "bg-accent text-accent-foreground",
           variant === "outline" && isActive && "bg-accent text-accent-foreground",
-          variant === "glass" && isActive && "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow",
+          variant === "glass" && isActive && "bg-primary text-primary-foreground shadow",
           variant === "pill" && isActive && "bg-background shadow-sm",
           // Non-active state
-          variant === "glass" && !isActive && "text-gray-600 hover:text-gray-800",
+          variant === "glass" && !isActive && "text-muted-foreground hover:text-foreground",
           variant === "pill" && !isActive && "text-muted-foreground hover:text-foreground",
           // Size styles
           size === "default" && "h-9 px-4 py-2",

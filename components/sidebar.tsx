@@ -2,15 +2,17 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight, Palette } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { logoutUser } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import * as Collapsible from '@radix-ui/react-collapsible'
+import { useTheme } from "@/components/theme-provider"
+import { ThemeSwitcher } from "@/components/theme-provider"
 
 interface SidebarProps {
   user: { id: string; name: string; email: string } | null
@@ -23,6 +25,10 @@ export function Sidebar({ user }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const { isPanelOpen, setIsPanelOpen } = useTheme()
+  
+  // 主题按钮引用
+  const themeButtonRef = useRef<HTMLButtonElement>(null)
 
   // 检测是否为移动设备并从本地存储中加载collapsed状态
   useEffect(() => {
@@ -115,57 +121,74 @@ export function Sidebar({ user }: SidebarProps) {
   ]
 
   // 侧边栏内容
-  const SidebarContent = () => (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-2 py-3 md:px-3 md:py-4">
-        <h2 className={cn("text-base md:text-lg font-semibold", isCollapsed ? "hidden" : "block")}>AI提速</h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="hidden md:flex"
-          onClick={toggleCollapsed}
-          aria-label={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
-        >
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </Button>
+  const SidebarContent = () => {
+    return (
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between px-2 py-3 md:px-3 md:py-4">
+          <h2 className={cn("text-base md:text-lg font-semibold", isCollapsed ? "hidden" : "block")}>AI提速</h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden md:flex"
+            onClick={toggleCollapsed}
+            aria-label={isCollapsed ? "展开侧边栏" : "收起侧边栏"}
+          >
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+        </div>
+        {user && !isCollapsed && (
+          <div className="mb-3 px-3 text-xs md:text-sm text-muted-foreground">欢迎, {user.name}</div>
+        )}
+        <div className="space-y-1 px-2">
+          {sidebarItems.map((item) => (
+            <Link key={item.href} href={item.href} onClick={(e) => {
+              // 如果是移动端，点击后关闭侧边栏
+              if (isMobile) {
+                setIsOpen(false);
+              }
+            }}>
+              <Button
+                variant={pathname === item.href ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start text-sm",
+                  pathname === item.href && "bg-muted font-medium",
+                  isCollapsed ? "px-2" : ""
+                )}
+              >
+                <item.icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
+                {!isCollapsed && <span>{item.title}</span>}
+              </Button>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-auto px-2 py-3 md:px-3 md:py-4 space-y-2">
+          {/* 主题设置按钮 */}
+          <Button
+            ref={themeButtonRef}
+            variant="outline"
+            className={cn("w-full justify-start text-sm", isCollapsed ? "px-2" : "")}
+            onClick={() => {
+              // 直接切换面板状态，不使用延迟
+              setIsPanelOpen(!isPanelOpen);
+            }}
+          >
+            <Palette className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
+            {!isCollapsed && <span>主题设置</span>}
+          </Button>
+          
+          <Button
+            variant="outline"
+            className={cn("w-full justify-start text-sm", isCollapsed ? "px-2" : "")}
+            onClick={handleLogout}
+          >
+            <LogOut className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
+            {!isCollapsed && <span>退出登录</span>}
+          </Button>
+        </div>
       </div>
-      {user && !isCollapsed && (
-        <div className="mb-3 px-3 text-xs md:text-sm text-muted-foreground">欢迎, {user.name}</div>
-      )}
-      <div className="space-y-1 px-2">
-        {sidebarItems.map((item) => (
-          <Link key={item.href} href={item.href} onClick={(e) => {
-            // 如果是移动端，点击后关闭侧边栏
-            if (isMobile) {
-              setIsOpen(false);
-            }
-          }}>
-            <Button
-              variant={pathname === item.href ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start text-sm",
-                pathname === item.href && "bg-muted font-medium",
-                isCollapsed ? "px-2" : ""
-              )}
-            >
-              <item.icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
-              {!isCollapsed && <span>{item.title}</span>}
-            </Button>
-          </Link>
-        ))}
-      </div>
-      <div className="mt-auto px-2 py-3 md:px-3 md:py-4">
-        <Button
-          variant="outline"
-          className={cn("w-full justify-start text-sm", isCollapsed ? "px-2" : "")}
-          onClick={handleLogout}
-        >
-          <LogOut className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
-          {!isCollapsed && <span>退出登录</span>}
-        </Button>
-      </div>
-    </div>
-  )
+    )
+  }
 
   // 移动端侧边栏
   if (isMobile) {
@@ -191,18 +214,37 @@ export function Sidebar({ user }: SidebarProps) {
           </Sheet>
           <h1 className="text-base md:text-lg font-semibold truncate">四象限管理系统</h1>
         </div>
+        
+        {/* 传递主题按钮引用 */}
+        <ThemeSwitcher buttonRef={themeButtonRef} />
       </>
     )
   }
 
   // 桌面端侧边栏
   return (
-    <div className={cn(
-      "hidden md:flex h-screen flex-col border-r transition-all duration-300 sticky top-0",
-      isCollapsed ? "w-[60px]" : "w-64"
-    )}>
-      <SidebarContent />
-    </div>
+    <>
+      <aside className="fixed left-0 top-0 bottom-0 h-screen z-20">
+        <Collapsible.Root
+          open={!isCollapsed}
+          onOpenChange={(open) => {
+            setIsCollapsed(!open)
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('sidebar-collapsed', (!open).toString())
+            }
+          }}
+          className={cn(
+            "flex flex-col h-full bg-card shadow-md border-r border-border transition-all duration-300",
+            isCollapsed ? "w-[60px]" : "w-[230px]"
+          )}
+        >
+          <SidebarContent />
+        </Collapsible.Root>
+      </aside>
+      
+      {/* 传递主题按钮引用 */}
+      <ThemeSwitcher buttonRef={themeButtonRef} />
+    </>
   )
 }
 
