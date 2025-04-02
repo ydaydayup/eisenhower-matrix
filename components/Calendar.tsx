@@ -87,7 +87,9 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
       setCurrentDate(date)
     }
     
-    // 直接切换到日视图，不调用onSelectDate避免弹出任务创建窗口
+    onSelectDate(date)
+    
+    // 可选：自动切换到日视图
     setViewMode("day")
   }
   
@@ -101,7 +103,7 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
       case 2: return "bg-blue-400";
       case 3: return "bg-amber-400";
       case 4: return "bg-emerald-400";
-      default: return "bg-primary";
+      default: return "bg-purple-400";
     }
   }
   
@@ -111,7 +113,7 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
       <div className="p-4 md:p-6 border-b border-gray-100/30">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
-            <h3 className="text-xl md:text-2xl font-bold text-foreground">
+            <h3 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
               {viewMode === "month" 
                 ? format(currentDate, "yyyy年 M月", { locale: zhCN })
                 : format(selectedDate, "yyyy年 M月 d日", { locale: zhCN })
@@ -124,8 +126,8 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                 className={cn(
                   "rounded-full text-xs transition-all",
                   viewMode === "month" 
-                    ? "bg-primary text-primary-foreground shadow" 
-                    : "text-foreground hover:text-foreground"
+                    ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow" 
+                    : "text-gray-600 hover:text-gray-800"
                 )}
                 onClick={() => setViewMode("month")}
               >
@@ -137,8 +139,8 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                 className={cn(
                   "rounded-full text-xs transition-all",
                   viewMode === "day" 
-                    ? "bg-primary text-primary-foreground shadow" 
-                    : "text-foreground hover:text-foreground"
+                    ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow" 
+                    : "text-gray-600 hover:text-gray-800"
                 )}
                 onClick={() => setViewMode("day")}
               >
@@ -181,18 +183,18 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
       
       {/* 月视图 */}
       {viewMode === "month" && (
-        <div className="month-view-container">
+        <div className="p-2 md:p-4">
           {/* 星期几表头 */}
-          <div className="grid grid-cols-7 mb-1">
+          <div className="grid grid-cols-7 mb-2">
             {weekDays.map((day, index) => (
-              <div key={index} className="weekday-header">
+              <div key={index} className="text-center text-sm font-medium text-gray-500 py-2">
                 {day}
               </div>
             ))}
           </div>
           
           {/* 日期网格 */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1 md:gap-2">
             {getDaysForMonthView(currentDate).map((date, i) => {
               const dayTasks = getTasksForDate(date)
               const isSelected = isSameDay(date, selectedDate)
@@ -204,16 +206,16 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                   key={i}
                   onClick={() => handleSelectDate(date)}
                   className={cn(
-                    "calendar-cell",
+                    "aspect-square rounded-xl hover:bg-white/30 transition-all relative",
                     !isCurrentMonth && "opacity-40",
-                    isSelected && "ring-2 ring-primary bg-background/50",
+                    isSelected && "ring-2 ring-purple-400 bg-white/50",
                   )}
                 >
                   <div className="flex flex-col h-full w-full p-1">
                     <div className="flex justify-center">
                       <span className={cn(
                         "h-8 w-8 flex items-center justify-center rounded-full text-sm",
-                        isTodayDate && "bg-primary text-primary-foreground font-medium"
+                        isTodayDate && "bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-medium"
                       )}>
                         {format(date, "d")}
                       </span>
@@ -239,7 +241,7 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                           </div>
                         ))}
                         {dayTasks.length > 3 && (
-                          <div className="text-xs text-primary font-medium px-1">
+                          <div className="text-xs text-purple-600 font-medium px-1">
                             +{dayTasks.length - 3}项
                           </div>
                         )}
@@ -268,8 +270,8 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                   <div className={cn(
                     "h-20 w-20 flex items-center justify-center rounded-full my-3",
                     isToday(selectedDate) 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-background/40"
+                      ? "bg-gradient-to-r from-purple-500 to-indigo-500 text-white" 
+                      : "bg-white/40"
                   )}>
                     <span className="text-4xl font-bold">{format(selectedDate, "d")}</span>
                   </div>
@@ -302,7 +304,7 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                 </Badge>
               </h4>
               
-              <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1.5">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1.5">
                 {getTasksForDate(selectedDate).length > 0 ? (
                   getTasksForDate(selectedDate).map((task, idx) => (
                     <div 
@@ -330,7 +332,7 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                         {/* 任务内容 */}
                         <div className="min-w-0 flex-1">
                           <p className={cn(
-                            "font-medium break-words",
+                            "font-medium",
                             task.completed && "line-through text-gray-400"
                           )}>
                             {task.title}
