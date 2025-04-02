@@ -1,3 +1,12 @@
+CREATE TABLE IF NOT EXISTS profiles (
+                                 id uuid not null,
+                                 name text null,
+                                 email text null,
+                                 created_at timestamp with time zone null default timezone ('utc'::text, now()),
+                                 constraint profiles_pkey primary key (id),
+                                 constraint profiles_email_key unique (email),
+                                 constraint profiles_id_fkey foreign KEY (id) references auth.users (id)
+);
 -- Create tasks table
 CREATE TABLE IF NOT EXISTS tasks (
                                      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -37,7 +46,6 @@ ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
 
 
-DROP POLICY "Users can view their own profile" ON profiles;
 --- Drop existing policies for profiles
 DROP POLICY IF EXISTS "Users can view their own profile" ON profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON profiles;
@@ -143,8 +151,8 @@ RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger for new user creation
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- -- Create trigger for new user creation
+-- CREATE TRIGGER on_auth_user_created
+--     AFTER INSERT ON auth.users
+--     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 

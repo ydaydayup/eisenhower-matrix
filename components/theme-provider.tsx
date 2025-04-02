@@ -100,17 +100,11 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   const updateUIElements = React.useCallback(() => {
     if (typeof document === 'undefined') return;
     
-    // 获取当前主题的CSS变量
     const root = document.documentElement;
     const primaryColor = getComputedStyle(root).getPropertyValue('--primary');
     const bgColor = getComputedStyle(root).getPropertyValue('--background');
     
-    // 更新自定义元素样式
-    document.querySelectorAll('.task-item').forEach(el => {
-      (el as HTMLElement).style.transition = 'all 300ms ease';
-    });
-    
-    document.querySelectorAll('.glass-morphism').forEach(el => {
+    document.querySelectorAll('.task-item, .glass-morphism').forEach(el => {
       (el as HTMLElement).style.transition = 'all 300ms ease';
     });
   }, []);
@@ -146,29 +140,33 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     applyTheme(newTheme);
     
     // 同步到后端
-    syncThemeToBackend(newTheme, customColors, recentThemes);
-  }, [applyTheme, customColors, recentThemes]);
+    syncThemeToBackend();
+  }, [applyTheme]);
 
   // 同步主题到后端
-  const syncThemeToBackend = React.useCallback(async (
-    currentTheme: string,
-    colors: typeof customColors,
-    themes: typeof recentThemes
-  ) => {
+  const themeRef = React.useRef(theme);
+  const customColorsRef = React.useRef(customColors);
+  const recentThemesRef = React.useRef(recentThemes);
+
+  React.useEffect(() => {
+    themeRef.current = theme;
+    customColorsRef.current = customColors;
+    recentThemesRef.current = recentThemes;
+  }, [theme, customColors, recentThemes]);
+
+  const syncThemeToBackend = React.useCallback(async () => {
     try {
       setIsSyncing(true);
       setSyncError(null);
       
       const themeSettings: ThemeSettings = {
-        currentTheme,
-        customColors: colors,
-        recentThemes: themes
+        currentTheme: themeRef.current,
+        customColors: customColorsRef.current,
+        recentThemes: recentThemesRef.current
       };
       
-      // 调用后端API保存主题设置
       const success = await saveUserThemeSettings(themeSettings);
       
-      // 如果API还未实现，这里会正常失败并使用本地存储作为后备
       if (!success) {
         console.log('使用本地存储作为后备');
       }
@@ -187,23 +185,21 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   const saveCustomTheme = React.useCallback((colors: typeof customColors) => {
     const newCustomTheme = { name: 'custom', colors };
     
-    // 更新最近使用的主题列表
-    const updatedThemes = [
-      newCustomTheme,
-      ...recentThemes.filter(t => 
-        JSON.stringify(t.colors) !== JSON.stringify(colors)
-      )
-    ].slice(0, MAX_STORED_THEMES);
+    setRecentThemes(prev => {
+      const updatedThemes = [
+        newCustomTheme,
+        ...prev.filter(t => JSON.stringify(t.colors) !== JSON.stringify(colors))
+      ].slice(0, MAX_STORED_THEMES);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(updatedThemes));
+      }
+
+      return updatedThemes;
+    });
     
-    setRecentThemes(updatedThemes);
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(CUSTOM_THEME_KEY, JSON.stringify(updatedThemes));
-    }
-    
-    // 同步到后端
-    syncThemeToBackend(theme, colors, updatedThemes);
-  }, [recentThemes, syncThemeToBackend, theme]);
+    syncThemeToBackend();
+  }, [syncThemeToBackend]);
 
   // 应用自定义颜色
   const applyCustomColors = React.useCallback((colors: typeof customColors) => {
@@ -323,25 +319,23 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   }, []);
 
   // 颜色变更处理
-  const handleColorChange = React.useCallback((colorType: keyof typeof customColors, value: string, applyImmediately: boolean = false) => {
-    // 防抖处理，减少实时渲染次数，提高性能
+  const handleColorChange = React.useCallback((
+    colorType: keyof typeof customColors, 
+    value: string, 
+    applyImmediately: boolean = false
+  ) => {
     setCustomColors(prev => ({ ...prev, [colorType]: value }));
     
-    // 如果不需要立即应用，则不立即更新视图（用于输入过程中）
     if (!applyImmediately) return;
     
-    // 获取当前主题模式
     const currentThemeMode = getThemeMode();
+    const newColors = { ...customColorsRef.current, [colorType]: value };
     
-    // 应用自定义颜色
-    const newColors = { ...customColors, [colorType]: value };
     applyCustomColors(newColors);
     
-    // 标记为自定义主题，但保留当前的主题模式
     if (currentThemeMode === 'default') {
       changeTheme('custom');
     } else {
-      // 保留当前主题模式，但应用自定义颜色
       if (typeof document !== 'undefined') {
         document.documentElement.classList.add('theme-custom');
       }
@@ -350,7 +344,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       }
       setTheme(`${currentThemeMode}-custom`);
     }
-  }, [applyCustomColors, changeTheme, customColors, getThemeMode]);
+  }, [applyCustomColors, changeTheme, getThemeMode]);
 
   // 从后端加载主题设置
   const loadThemeFromBackend = React.useCallback(async () => {
@@ -416,22 +410,22 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     initializeTheme();
 
     // 添加键盘快捷键监听
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + T 切换主题面板
-      if ((e.ctrlKey || e.metaKey) && e.key === 't') {
-        e.preventDefault();
-        setIsPanelOpen(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    // const handleKeyDown = (e: KeyboardEvent) => {
+    //   // Ctrl/Cmd + T 切换主题面板
+    //   if ((e.ctrlKey || e.metaKey) && e.key === 't') {
+    //     e.preventDefault();
+    //     setIsPanelOpen(prev => !prev);
+    //   }
+    // };
+    //
+    // window.addEventListener('keydown', handleKeyDown);
+    // return () => window.removeEventListener('keydown', handleKeyDown);
   }, [applyTheme, loadThemeFromBackend]);
 
   // 显示保存当前主题设置
   const saveThemeSettings = React.useCallback(async () => {
-    return await syncThemeToBackend(theme, customColors, recentThemes);
-  }, [syncThemeToBackend, theme, customColors, recentThemes]);
+    return await syncThemeToBackend();
+  }, [syncThemeToBackend]);
 
   // 创建上下文值
   const contextValue = React.useMemo(() => ({
@@ -449,13 +443,13 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     syncError,
     saveThemeSettings
   }), [
-    theme, 
-    changeTheme, 
-    customColors, 
-    handleColorChange, 
-    isPanelOpen, 
-    resetToDefault, 
-    recentThemes, 
+    theme,
+    changeTheme,
+    customColors,
+    handleColorChange,
+    isPanelOpen,
+    resetToDefault,
+    recentThemes,
     applySavedTheme,
     isSyncing,
     syncError,
