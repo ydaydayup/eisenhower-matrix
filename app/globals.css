@@ -4,65 +4,129 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
+    /* 明亮模式 */
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 20%; /* #333333 */
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 0 0% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
+    --popover-foreground: 0 0% 20%;
 
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 207 90% 54%; /* #2196F3 */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
+    --secondary-foreground: 0 0% 20%;
 
     --muted: 220 14.3% 95.9%;
     --muted-foreground: 220 8.9% 46.1%;
 
-    --accent: 262.1 83.3% 57.8%;
-    --accent-foreground: 210 20% 98%;
+    --accent: 207 90% 54%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 262.1 83.3% 57.8%;
+    --ring: 207 90% 54%;
 
     --radius: 0.75rem;
   }
 
-  .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
+  /* 深色模式 */
+  .theme-dark {
+    --background: 0 0% 18%; /* #2D2D2D */
+    --foreground: 0 0% 88%; /* #E0E0E0 */
 
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
+    --card: 0 0% 18%;
+    --card-foreground: 0 0% 88%;
 
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 0 0% 18%;
+    --popover-foreground: 0 0% 88%;
 
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
+    --primary: 122 59% 49%; /* #4CAF50 */
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary-foreground: 0 0% 88%;
 
     --muted: 215 27.9% 16.9%;
     --muted-foreground: 217.9 10.6% 64.9%;
 
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
+    --accent: 122 59% 49%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 215 27.9% 16.9%;
     --input: 215 27.9% 16.9%;
-    --ring: 263.4 70% 50.4%;
+    --ring: 122 59% 49%;
+  }
+
+  /* 护眼模式 */
+  .theme-eyecare {
+    --background: 45 19% 94%; /* #F3F2ED */
+    --foreground: 0 0% 20%;
+
+    --card: 45 19% 94%;
+    --card-foreground: 0 0% 20%;
+
+    --popover: 45 19% 94%;
+    --popover-foreground: 0 0% 20%;
+
+    --primary: 122 59% 49%; /* #4CAF50 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 45 19% 90%;
+    --secondary-foreground: 0 0% 20%;
+
+    --muted: 45 19% 90%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 122 59% 49%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 45 19% 85%;
+    --input: 45 19% 85%;
+    --ring: 122 59% 49%;
+  }
+
+  /* 高对比度 */
+  .theme-highcontrast {
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 0 0% 0%; /* #000000 */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 0 0% 0%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 0%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 0%;
   }
 
   /* 移动端优化 */
@@ -84,7 +148,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: linear-gradient(to bottom right, rgba(236, 236, 255, 0.8), rgba(243, 243, 253, 0.8));
+    background-image: linear-gradient(to bottom right, hsl(var(--background)), hsl(var(--background)));
+    transition: background-color 300ms ease, color 300ms ease, border-color 300ms ease;
     min-height: 100vh;
   }
 }
@@ -92,7 +157,7 @@
 /* 玻璃拟态效果 */
 @layer components {
   .glass-morphism {
-    @apply bg-white/80 backdrop-blur-md shadow-sm border border-white/20;
+    @apply bg-background/80 backdrop-blur-md shadow-sm border border-border/20;
   }
   
   .glass-card {
@@ -100,20 +165,167 @@
   }
   
   .glass-button {
-    @apply bg-white/50 hover:bg-white/60 backdrop-blur-md border border-white/20 transition-all;
+    @apply bg-background/50 hover:bg-background/60 backdrop-blur-md border border-border/20 transition-all;
   }
   
   .quadrant-card {
-    @apply glass-morphism shadow-md border border-white/30 backdrop-blur-sm;
+    @apply glass-morphism shadow-md border border-border/30 backdrop-blur-sm;
   }
   
   .task-item {
-    @apply bg-white/60 hover:bg-white/80 backdrop-blur-sm border border-white/40 
+    @apply bg-background/60 hover:bg-background/80 backdrop-blur-sm border border-border/40 
            transition-all duration-300 rounded-xl shadow-sm hover:shadow-md;
   }
   
   .task-item-completed {
-    @apply bg-slate-100/50 border-slate-200/50;
+    @apply bg-muted/50 border-muted/50 text-muted-foreground;
+  }
+
+  /* 主题适配 - 暗色模式下的卡片和项目 */
+  .theme-dark .glass-morphism,
+  .theme-dark .glass-card,
+  .theme-dark .quadrant-card {
+    @apply bg-background/90 border-border/30;
+  }
+  
+  .theme-dark .glass-button {
+    @apply bg-background/70 hover:bg-background/80 border-border/30;
+  }
+  
+  .theme-dark .task-item {
+    @apply bg-background/70 hover:bg-background/90 border-border/30;
+  }
+
+  /* 主题切换按钮 */
+  .theme-switch-button {
+    @apply fixed bottom-6 right-6 w-10 h-10 rounded-full bg-primary text-primary-foreground
+           flex items-center justify-center shadow-lg cursor-pointer z-50
+           transition-all duration-300 hover:scale-110;
+  }
+
+  /* 主题设置面板 */
+  .theme-panel {
+    @apply w-72 p-4 rounded-xl bg-card text-card-foreground
+           shadow-lg z-50 border border-border;
+    animation: fadeIn 0.2s ease-out;
+    transition: opacity 0.2s ease;
+  }
+  
+  /* 主题选项样式 */
+  .theme-option {
+    @apply flex items-center gap-2 px-3 py-2.5 rounded-lg cursor-pointer
+           hover:bg-muted/50 transition-all duration-200;
+  }
+  
+  .theme-option.active {
+    @apply bg-muted font-medium;
+  }
+  
+  /* 颜色选择部分 */
+  .color-picker-wrapper {
+    @apply space-y-3 mt-3;
+  }
+  
+  .color-item {
+    @apply flex flex-col space-y-1;
+  }
+  
+  .color-preview {
+    @apply w-6 h-6 rounded-full border border-border;
+  }
+  
+  /* 保存按钮样式 */
+  .save-button {
+    @apply w-full py-2 px-4 rounded-md text-sm font-medium transition-colors;
+  }
+  
+  .save-button-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  
+  .save-button-disabled {
+    @apply bg-muted text-muted-foreground cursor-not-allowed;
+  }
+  
+  /* 保存消息样式 */
+  .save-message {
+    @apply text-xs rounded-md py-2 px-3 mt-1;
+  }
+  
+  .save-message-success {
+    @apply bg-green-500/10 text-green-500;
+  }
+  
+  .save-message-error {
+    @apply bg-red-500/10 text-red-500;
+  }
+  
+  /* 使用淡入效果替代滑动动画 */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  /* 响应式调整 - 移动设备 */
+  @media (max-width: 768px) {
+    .theme-panel {
+      @apply w-[calc(100vw-32px)] max-w-md left-4 !important;
+      top: 80px !important;
+      animation: fadeIn 0.2s ease-out;
+    }
+  }
+
+  /* 组件库元素主题适配 */
+  /* 按钮主题适配 */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90;
+  }
+  
+  .btn-outline {
+    @apply border border-border bg-background hover:bg-secondary;
+  }
+  
+  /* 输入框主题适配 */
+  .input-theme {
+    @apply bg-background border-border focus:border-primary focus:ring-primary;
+  }
+  
+  /* 标签页主题适配 */
+  .tab-theme {
+    @apply hover:bg-secondary data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground;
+  }
+  
+  /* 下拉菜单主题适配 */
+  .dropdown-theme {
+    @apply bg-card text-card-foreground border border-border;
+  }
+  
+  /* 分割线主题适配 */
+  .divider-theme {
+    @apply border-border;
+  }
+  
+  /* 卡片头部主题适配 */
+  .card-header {
+    @apply text-foreground;
+  }
+  
+  /* 卡片内容主题适配 */
+  .card-content {
+    @apply text-foreground;
+  }
+  
+  /* 状态标签主题适配 */
+  .status-theme {
+    @apply bg-primary/20 text-primary-foreground border border-primary/30;
   }
 }
 
@@ -140,5 +352,27 @@
   .custom-scrollbar {
     @apply scrollbar-thin;
   }
+}
+
+/* 月历组件大小调整 */
+.grid-cols-7 {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+/* 日历单元格调整 */
+.calendar-cell {
+  @apply aspect-square rounded-xl hover:bg-background/30 transition-all relative;
+  min-height: 60px; /* 设置最小高度 */
+  max-height: 100px; /* 设置最大高度 */
+}
+
+/* 月视图容器调整 */
+.month-view-container {
+  @apply p-2 md:p-3 max-h-[calc(100vh-200px)] overflow-auto;
+}
+
+/* 调整星期表头大小 */
+.weekday-header {
+  @apply text-center text-sm font-medium text-gray-500 py-1;
 }
 

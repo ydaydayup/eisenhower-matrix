@@ -70,7 +70,6 @@ export default function CalendarView() {
   const handleSelectDate = (date: Date) => {
     console.log("选择的日期:", date)
     setSelectedDate(date)
-    setIsCreating(true)
   }
 
   // 编辑任务
@@ -86,7 +85,7 @@ export default function CalendarView() {
           <h1 className="text-2xl font-bold">日历视图</h1>
           <Button 
             onClick={() => setIsCreating(true)} 
-            className="whitespace-nowrap"
+            className="btn-primary whitespace-nowrap"
           >
             <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
           </Button>
@@ -97,7 +96,7 @@ export default function CalendarView() {
             <div className="loader"></div>
           </div>
         ) : (
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl shadow-lg p-6 transition-all duration-300">
+          <div className="glass-card transition-all duration-300">
             <Calendar 
               onSelectDate={handleSelectDate} 
               tasks={tasks}
@@ -144,17 +143,6 @@ export default function CalendarView() {
           userId={user?.id || ''}
           tags={tags}
         />
-
-        <Button 
-          onClick={() => {
-            toast({
-              title: "测试消息",
-              description: "这是一条测试消息",
-            })
-          }}
-        >
-          测试 Toast
-        </Button>
       </div>
     </main>
   )
