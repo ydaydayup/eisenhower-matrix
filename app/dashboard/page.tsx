@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, JSX } from "react"
-import { PlusCircle, Edit, Trash2, Check, LucideTag, ListTree, Loader2 } from "lucide-react"
+import { PlusCircle, Edit, Trash2, Check, LucideTag, ListTree } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
@@ -449,8 +449,11 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-white">
+        <div className="text-center glass-card p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">加载中...</p>
+        </div>
       </div>
     )
   }
@@ -462,11 +465,11 @@ export default function Dashboard() {
       </style>
       <main className="container mx-auto p-4 md:p-6 max-w-6xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center my-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">待办事项</h1>
+          <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">待办事项</h1>
           <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
             <Button 
               onClick={() => openEditModal()} 
-              className="btn-primary glass-button px-4 py-2 rounded-full"
+              className="glass-button bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:shadow-lg transition-all px-4 py-2 rounded-full"
             >
               <PlusCircle className="mr-2 h-4 w-4" /> 添加任务
             </Button>
@@ -490,15 +493,15 @@ export default function Dashboard() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") addTag()
                       }}
-                      className="glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-primary"
+                      className="glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
                     />
-                    <Button onClick={addTag} className="btn-primary">添加</Button>
+                    <Button onClick={addTag} className="glass-button bg-gradient-to-r from-purple-500 to-indigo-500 text-white">添加</Button>
                   </div>
                   <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
                     {tags.map((tag) => (
                       <div key={tag.id} className="flex justify-between items-center p-3 glass-morphism rounded-lg">
                         <span>{tag.name}</span>
-                        <Button variant="ghost" size="icon" className="hover:text-destructive hover:bg-destructive/10" onClick={() => deleteTagItem(tag.id)}>
+                        <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-500 hover:bg-red-50/50" onClick={() => deleteTagItem(tag.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -528,9 +531,9 @@ export default function Dashboard() {
             }}
             className="w-full sm:w-auto"
           >
-            <ButtonGroupItem className="tab-theme">四象限</ButtonGroupItem>
-            <ButtonGroupItem className="tab-theme">分类</ButtonGroupItem>
-            <ButtonGroupItem className="tab-theme">精简</ButtonGroupItem>
+            <ButtonGroupItem>四象限</ButtonGroupItem>
+            <ButtonGroupItem>分类</ButtonGroupItem>
+            <ButtonGroupItem>精简</ButtonGroupItem>
           </ButtonGroup>
         </div>
 
@@ -606,7 +609,7 @@ export default function Dashboard() {
                     <div key={tag.id} className="glass-card p-5">
                       <div className="mb-4">
                         <h2 className="text-lg font-bold flex items-center">
-                          <Badge className="mr-2 bg-primary hover:bg-primary/90">{tag.name}</Badge>
+                          <Badge className="mr-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600">{tag.name}</Badge>
                           <span className="text-sm text-gray-500">({tagTasks.length} 项)</span>
                         </h2>
                       </div>
@@ -696,14 +699,14 @@ export default function Dashboard() {
         {/* 已完成任务区域 */}
         <div className="mt-8">
           <div
-            className="flex justify-between items-center p-3 glass-morphism rounded-xl cursor-pointer hover:bg-background/90 transition-all"
+            className="flex justify-between items-center p-3 glass-morphism rounded-xl cursor-pointer hover:bg-white/90 transition-all"
             onClick={() => setShowCompleted(!showCompleted)}
           >
             <h2 className="font-bold flex items-center">
               <Check className="h-4 w-4 mr-2 text-green-500" />
               已完成任务 ({getCompletedTasks().length})
             </h2>
-            <span className="text-sm text-muted-foreground">{showCompleted ? "收起" : "展开"}</span>
+            <span className="text-sm text-gray-500">{showCompleted ? "收起" : "展开"}</span>
           </div>
 
           {showCompleted && (
@@ -722,7 +725,7 @@ export default function Dashboard() {
                   />
                 ))
               ) : (
-                <div className="text-center text-muted-foreground py-6 rounded-xl bg-background/30 backdrop-blur-sm">暂无已完成任务</div>
+                <div className="text-center text-gray-400 py-6 rounded-xl bg-white/30 backdrop-blur-sm">暂无已完成任务</div>
               )}
             </div>
           )}
@@ -803,20 +806,20 @@ function TaskItem({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-6 w-6 mt-0.5 rounded-full hover:bg-background/70" 
+            className="h-6 w-6 mt-0.5 rounded-full hover:bg-white/70" 
             onClick={onToggleComplete}
           >
             <div
               className={cn(
                 "h-4 w-4 rounded-full border transition-colors",
-                task.completed ? "bg-primary border-0" : "border-border",
+                task.completed ? "bg-gradient-to-r from-purple-500 to-indigo-500 border-0" : "border-gray-300",
               )}
             >
-              {task.completed && <Check className="h-3 w-3 text-primary-foreground" />}
+              {task.completed && <Check className="h-3 w-3 text-white" />}
             </div>
           </Button>
           <div className="min-w-0 flex-1">
-            <h3 className={cn("font-medium break-words", task.completed && "line-through text-muted-foreground")}>
+            <h3 className={cn("font-medium truncate", task.completed && "line-through text-gray-400")}>
               {quadrantInfo?.icon && <span className="mr-1 text-xs">{quadrantInfo.icon}</span>} {task.title}
             </h3>
 
@@ -826,7 +829,7 @@ function TaskItem({
                 {task.due_date && (
                   <div className={cn(
                     "text-xs mt-1 flex items-center",
-                    isDateOverdue(task.due_date) ? "text-destructive font-medium" : "text-muted-foreground",
+                    isDateOverdue(task.due_date) ? "text-red-500 font-medium" : "text-gray-500",
                   )}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -837,7 +840,7 @@ function TaskItem({
                 {task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs px-2 py-0 h-5 bg-secondary/50 text-secondary-foreground">
+                      <Badge key={tag} variant="secondary" className="text-xs px-2 py-0 h-5 bg-white/70 text-gray-600 hover:bg-white">
                         {tag}
                       </Badge>
                     ))}
@@ -859,7 +862,7 @@ function TaskItem({
                   {task.due_date && (
                     <Badge variant="outline" className={cn(
                       "text-xs border-0",
-                      isDateOverdue(task.due_date) ? "text-destructive font-medium bg-destructive/10" : "text-muted-foreground bg-muted/50"
+                      isDateOverdue(task.due_date) ? "text-red-500 font-medium bg-red-50" : "text-gray-500 bg-gray-100/50"
                     )}>
                       {formatDateTime(task.due_date)}
                     </Badge>
@@ -868,7 +871,7 @@ function TaskItem({
                 {task.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {task.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs px-2 py-0 h-5 bg-secondary/50 text-secondary-foreground">
+                      <Badge key={tag} variant="secondary" className="text-xs px-2 py-0 h-5 bg-white/70 text-gray-600 hover:bg-white">
                         {tag}
                       </Badge>
                     ))}
@@ -879,14 +882,14 @@ function TaskItem({
           </div>
         </div>
         <div className="flex items-start gap-1 opacity-20 group-hover:opacity-100 transition-all duration-200">
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background/70" onClick={onAddSubtask}>
-            <ListTree className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/70" onClick={onAddSubtask}>
+            <ListTree className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background/70" onClick={onEdit}>
-            <Edit className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/70" onClick={onEdit}>
+            <Edit className="h-3.5 w-3.5 text-gray-500 hover:text-gray-700" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-background/70" onClick={onDelete}>
-            <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-white/70" onClick={onDelete}>
+            <Trash2 className="h-3.5 w-3.5 text-gray-500 hover:text-red-500" />
           </Button>
         </div>
       </div>
