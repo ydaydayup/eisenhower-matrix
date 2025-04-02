@@ -198,28 +198,24 @@ export default function TaskEditModal({
     }
   }
 
-  const handleChange = (field: keyof typeof taskForm, value: string) => {
-    setTaskForm({ ...taskForm, [field]: value })
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[800px] glass-card border-0 max-h-[90vh] overflow-y-auto w-[95%] sm:w-[85%] md:w-4/5">
+      <DialogContent className="max-w-[1000px] glass-card border-0">
         <DialogHeader>
-          <DialogTitle className="text-xl text-center text-foreground">
+          <DialogTitle className="text-xl text-center bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
             {task ? "编辑任务" : "添加任务"}
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6 py-4">
+        <div className="space-y-8 py-4">
           <div>
             <label className="text-base font-medium text-gray-700">任务名称</label>
             <Input
               ref={titleInputRef}
               value={taskForm.title}
-              onChange={(e) => handleChange("title", e.target.value)}
+              onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
               placeholder="输入任务名称"
-              className="mt-2 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring h-12 text-lg"
+              className="mt-2 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400 h-12 text-lg"
               autoFocus={false}
             />
           </div>
@@ -231,7 +227,7 @@ export default function TaskEditModal({
                 value={taskForm.quadrant.toString()}
                 onValueChange={(value) => setTaskForm({ ...taskForm, quadrant: parseInt(value) as 1 | 2 | 3 | 4 })}
               >
-                <SelectTrigger className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring">
+                <SelectTrigger className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-purple-400">
                   <SelectValue placeholder="选择优先级" />
                 </SelectTrigger>
                 <SelectContent className="glass-morphism border-0">
@@ -269,7 +265,7 @@ export default function TaskEditModal({
                 type="datetime-local"
                 value={getCurrentDateTime()}
                 onChange={handleDateTimeChange}
-                className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+                className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-purple-400 h-12"
               />
             </div>
           </div>
@@ -282,7 +278,7 @@ export default function TaskEditModal({
                   variant="outline"
                   role="combobox"
                   aria-expanded={openTagSelect}
-                  className="mt-2 w-full justify-between glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+                  className="mt-2 w-full justify-between glass-morphism border-0 focus:ring-1 focus:ring-purple-400 h-12"
                 >
                   <span className="flex gap-1 flex-wrap">
                     {taskForm.tags.length > 0 ? (
@@ -344,9 +340,9 @@ export default function TaskEditModal({
             </div>
             <Textarea
               value={taskForm.notes}
-              onChange={(e) => handleChange("notes", e.target.value)}
+              onChange={(e) => setTaskForm({ ...taskForm, notes: e.target.value })}
               placeholder="输入任务详情..."
-              className="min-h-[200px] glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring"
+              className="min-h-[200px] glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-purple-400"
             />
           </div>
         </div>
@@ -361,7 +357,7 @@ export default function TaskEditModal({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            className="btn-primary"
+            className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
