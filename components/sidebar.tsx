@@ -224,7 +224,7 @@ export function Sidebar({ user }: SidebarProps) {
   // 桌面端侧边栏
   return (
     <>
-      <aside className="fixed left-0 top-0 bottom-0 h-screen z-20">
+      <aside className="left-0 top-0 bottom-0 h-screen z-20">
         <Collapsible.Root
           open={!isCollapsed}
           onOpenChange={(open) => {
