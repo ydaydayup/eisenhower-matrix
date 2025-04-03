@@ -77,6 +77,7 @@ export default function TaskEditModal({
     }
   }, [open])
 
+
   const generateDetailedNotes = async () => {
     if (!taskForm.title.trim()) {
       toast({
@@ -87,17 +88,47 @@ export default function TaskEditModal({
     }
 
     setIsAIGenerating(true)
+    setTaskForm(prev => ({
+      ...prev,
+      notes: '' // 清空现有笔记
+    }))
 
     try {
-      setTimeout(() => {
-        const generatedNotes = generateMockNotes(taskForm.title)
-        setTaskForm({ ...taskForm, notes: generatedNotes })
-        setIsAIGenerating(false)
-        toast({
-          title: "生成成功",
-          description: "AI已为您生成详细笔记",
-        })
-      }, 1500)
+      const response = await fetch('/api/analyze-task', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: taskForm.title }),
+      })
+
+      if (!response.ok) throw new Error('Failed to generate analysis')
+      if (!response.body) throw new Error('Response body is null')
+
+      // 创建 ReadableStream 读取器
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let accumulatedNotes = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        // 解码新的文本块并累加
+        const text = decoder.decode(value)
+        accumulatedNotes += text
+
+        // 更新表单状态
+        setTaskForm(prev => ({
+          ...prev,
+          notes: accumulatedNotes
+        }))
+      }
+
+      toast({
+        title: "生成成功",
+        description: "AI已为您生成详细笔记",
+      })
     } catch (error) {
       console.error("AI生成笔记失败:", error)
       toast({
@@ -105,18 +136,9 @@ export default function TaskEditModal({
         description: "无法生成笔记，请稍后再试",
         variant: "destructive",
       })
+    } finally {
       setIsAIGenerating(false)
     }
-  }
-
-  const generateMockNotes = (title: string) => {
-    const templates = [
-      `# ${title}\n\n## 任务目标\n- 完成${title}的主要功能\n- 确保质量和性能符合要求\n\n## 子任务\n1. 分析需求\n2. 设计方案\n3. 实施计划\n4. 测试验收\n\n## 注意事项\n* 与相关团队成员保持沟通\n* 记录关键决策和变更`,
-      `# ${title}\n\n## 背景\n这是一个关于${title}的任务，需要在截止日期前完成。\n\n## 执行步骤\n1. 收集相关资料\n2. 整理分析信息\n3. 制定详细计划\n4. 按计划执行\n5. 复盘总结\n\n## 资源需求\n- 时间预估: 3天\n- 人力: 1人`,
-      `# ${title}\n\n## 描述\n${title}是一项需要认真对待的任务。\n\n## 优先级考虑\n- 重要性: 高\n- 紧急性: 中\n\n## 行动计划\n1. 明确任务范围\n2. 制定时间表\n3. 确定关键里程碑\n4. 执行并跟踪进度\n\n## 预期成果\n完成所有${title}相关需求，确保质量`,
-    ]
-
-    return templates[Math.floor(Math.random() * templates.length)]
   }
 
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
