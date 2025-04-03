@@ -59,15 +59,17 @@ export default function TaskEditModal({
         notes: task.notes || "",
       })
     } else {
-      setTaskForm({
-        title: "",
-        quadrant: 1,
-        due_date: "",
-        tags: [],
-        notes: "",
-      })
+      if (open) {
+        setTaskForm({
+          title: "",
+          quadrant: 1,
+          due_date: "",
+          tags: [],
+          notes: "",
+        })
+      }
     }
-  }, [task])
+  }, [task, open])
 
   useEffect(() => {
     if (open && titleInputRef.current) {
