@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: my-custom-nextjs-image:latest
+    volumes:
+      - .env:/app/.env
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+#       - DATABASE_URL=your_database_url
+#       - API_KEY=your_api_key
+    restart: always 
