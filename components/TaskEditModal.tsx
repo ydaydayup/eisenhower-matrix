@@ -228,176 +228,178 @@ export default function TaskEditModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[800px] glass-card border-0 max-h-[90vh] overflow-y-auto w-[95%] sm:w-[85%] md:w-4/5">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-center text-foreground">
-            {task ? "编辑任务" : "添加任务"}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-6 py-4">
-          <div>
-            <label className="text-base font-medium text-gray-700">任务名称</label>
-            <Input
-              ref={titleInputRef}
-              value={taskForm.title}
-              onChange={(e) => handleChange("title", e.target.value)}
-              placeholder="输入任务名称"
-              className="mt-2 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring h-12 text-lg"
-              autoFocus={false}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <DialogContent className="max-w-[800px] p-2 glass-card border-0 max-h-[90vh] w-[95%] sm:w-[85%] md:w-4/5">
+        <div className="overflow-y-auto max-h-[calc(90vh-4rem)] p-2">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-center text-foreground">
+              {task ? "编辑任务" : "添加任务"}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
             <div>
-              <label className="text-base font-medium text-gray-700">优先级（象限）</label>
-              <Select
-                value={taskForm.quadrant.toString()}
-                onValueChange={(value) => setTaskForm({ ...taskForm, quadrant: parseInt(value) as 1 | 2 | 3 | 4 })}
-              >
-                <SelectTrigger className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring">
-                  <SelectValue placeholder="选择优先级" />
-                </SelectTrigger>
-                <SelectContent className="glass-morphism border-0">
-                  <SelectItem value="1">
-                    <div className="flex items-center">
-                      <span className="mr-2">⚡</span>
-                      象限一 - 紧急且重要
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="2">
-                    <div className="flex items-center">
-                      <span className="mr-2">🎯</span>
-                      象限二 - 重要不紧急
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="3">
-                    <div className="flex items-center">
-                      <span className="mr-2">⏱️</span>
-                      象限三 - 紧急不重要
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="4">
-                    <div className="flex items-center">
-                      <span className="mr-2">🌱</span>
-                      象限四 - 不紧急不重要
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-base font-medium text-gray-700">任务名称</label>
+              <Input
+                ref={titleInputRef}
+                value={taskForm.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="输入任务名称"
+                className="mt-2 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring h-12 text-lg"
+                autoFocus={false}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-base font-medium text-gray-700">优先级（象限）</label>
+                <Select
+                  value={taskForm.quadrant.toString()}
+                  onValueChange={(value) => setTaskForm({ ...taskForm, quadrant: parseInt(value) as 1 | 2 | 3 | 4 })}
+                >
+                  <SelectTrigger className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring">
+                    <SelectValue placeholder="选择优先级" />
+                  </SelectTrigger>
+                  <SelectContent className="glass-morphism border-0">
+                    <SelectItem value="1">
+                      <div className="flex items-center">
+                        <span className="mr-2">⚡</span>
+                        象限一 - 紧急且重要
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="2">
+                      <div className="flex items-center">
+                        <span className="mr-2">🎯</span>
+                        象限二 - 重要不紧急
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="3">
+                      <div className="flex items-center">
+                        <span className="mr-2">⏱️</span>
+                        象限三 - 紧急不重要
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="4">
+                      <div className="flex items-center">
+                        <span className="mr-2">🌱</span>
+                        象限四 - 不紧急不重要
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-base font-medium text-gray-700">预计完成时间</label>
+                <Input
+                  type="datetime-local"
+                  value={getCurrentDateTime()}
+                  onChange={handleDateTimeChange}
+                  className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+                />
+              </div>
             </div>
 
             <div>
-              <label className="text-base font-medium text-gray-700">预计完成时间</label>
-              <Input
-                type="datetime-local"
-                value={getCurrentDateTime()}
-                onChange={handleDateTimeChange}
-                className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+              <label className="text-base font-medium text-gray-700">标签</label>
+              <Popover open={openTagSelect} onOpenChange={setOpenTagSelect}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openTagSelect}
+                    className="mt-2 w-full justify-between glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+                  >
+                    <span className="flex gap-1 flex-wrap">
+                      {taskForm.tags.length > 0 ? (
+                        taskForm.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="mr-1">
+                            {tag}
+                          </Badge>
+                        ))
+                      ) : (
+                        "选择标签..."
+                      )}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="搜索标签..." />
+                    <CommandEmpty>未找到标签</CommandEmpty>
+                    <CommandGroup>
+                      {tags.map((tag) => (
+                        <CommandItem
+                          key={tag.id}
+                          onSelect={() => {
+                            const newTags = taskForm.tags.includes(tag.name)
+                              ? taskForm.tags.filter(t => t !== tag.name)
+                              : [...taskForm.tags, tag.name]
+                            setTaskForm({ ...taskForm, tags: newTags })
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              taskForm.tags.includes(tag.name) ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {tag.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-base font-medium text-gray-700">任务详情</label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  onClick={generateDetailedNotes}
+                  disabled={isAIGenerating}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  AI生成详细笔记
+                </Button>
+              </div>
+              <Textarea
+                value={taskForm.notes}
+                onChange={(e) => handleChange("notes", e.target.value)}
+                placeholder="输入任务详情..."
+                className="min-h-[200px] glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
           </div>
 
-          <div>
-            <label className="text-base font-medium text-gray-700">标签</label>
-            <Popover open={openTagSelect} onOpenChange={setOpenTagSelect}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={openTagSelect}
-                  className="mt-2 w-full justify-between glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
-                >
-                  <span className="flex gap-1 flex-wrap">
-                    {taskForm.tags.length > 0 ? (
-                      taskForm.tags.map(tag => (
-                        <Badge key={tag} variant="secondary" className="mr-1">
-                          {tag}
-                        </Badge>
-                      ))
-                    ) : (
-                      "选择标签..."
-                    )}
-                  </span>
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="搜索标签..." />
-                  <CommandEmpty>未找到标签</CommandEmpty>
-                  <CommandGroup>
-                    {tags.map((tag) => (
-                      <CommandItem
-                        key={tag.id}
-                        onSelect={() => {
-                          const newTags = taskForm.tags.includes(tag.name)
-                            ? taskForm.tags.filter(t => t !== tag.name)
-                            : [...taskForm.tags, tag.name]
-                          setTaskForm({ ...taskForm, tags: newTags })
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            taskForm.tags.includes(tag.name) ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {tag.name}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-base font-medium text-gray-700">任务详情</label>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs"
-                onClick={generateDetailedNotes}
-                disabled={isAIGenerating}
-              >
-                <Eye className="mr-2 h-4 w-4" />
-                AI生成详细笔记
-              </Button>
-            </div>
-            <Textarea
-              value={taskForm.notes}
-              onChange={(e) => handleChange("notes", e.target.value)}
-              placeholder="输入任务详情..."
-              className="min-h-[200px] glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              取消
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              className="btn-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  {task ? "更新中..." : "创建中..."}
+                </>
+              ) : (
+                task ? "更新" : "创建"
+              )}
+            </Button>
+          </DialogFooter>
         </div>
-
-        <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            取消
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            className="btn-primary"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                {task ? "更新中..." : "创建中..."}
-              </>
-            ) : (
-              task ? "更新" : "创建"
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
