@@ -11,6 +11,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
@@ -25,7 +26,14 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+      outputFileTracingIncludes: {
+        '*': [
+          'public/**/*',
+          '.next/static/**/*',
+        ],
+      },
   },
+
 }
 
 mergeConfig(nextConfig, userConfig)
