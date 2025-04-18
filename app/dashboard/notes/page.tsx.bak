@@ -1,0 +1,1473 @@
+"use client"
+
+import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { PlusCircle, Edit, Trash2, Search, FileText, Clock, Type, Code, Table, Minus, Link as LinkIcon, FileIcon, AlignLeft, Folder, CalendarDays, Hash, Bookmark, AlignJustify, CheckSquare, ListOrdered, List, Check } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { getUserSession } from "@/lib/auth"
+import { type Note, getUserNotes, createNote, updateNote, deleteNote } from "@/lib/notes"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
+import { cookies } from 'next/headers';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ReactQuill from 'react-quill'
+import 'react-quill/dist/quill.snow.css'
+import React, { forwardRef, useImperativeHandle } from 'react'
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+
+// 自定义Quill编辑器组件
+interface CustomQuillEditorProps {
+  value: string;
+  onChange: (content: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+interface QuillEditorRef {
+  getEditor: () => Quill | null;
+  getEditorContents: () => string;
+  focus: () => void;
+}
+
+// 定义标题项的类型
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
+
+const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
+  ({ value, onChange, placeholder = '开始编辑备忘录...', className = '' }, ref) => {
+    const editorRef = useRef<HTMLDivElement>(null);
+    const quillRef = useRef<Quill | null>(null);
+    const isInitializedRef = useRef(false);
+    
+    // 将Quill实例方法暴露给父组件
+    useImperativeHandle(ref, () => ({
+      getEditor: () => quillRef.current,
+      getEditorContents: () => {
+        return quillRef.current ? quillRef.current.root.innerHTML : '';
+      },
+      focus: () => {
+        if (quillRef.current) {
+          quillRef.current.focus();
+        }
+      }
+    }));
+    
+    // 初始化Quill编辑器
+    useEffect(() => {
+      if (editorRef.current && !isInitializedRef.current) {
+        // 配置Quill工具栏
+        const modules = {
+          toolbar: [
+            [{ 'header': [1, 2, 3, 4, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote', 'code-block'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'image'],
+            ['clean']
+          ]
+        };
+        
+        // 创建Quill实例
+        quillRef.current = new Quill(editorRef.current, {
+          modules,
+          placeholder,
+          theme: 'snow',
+        });
+        
+        // 设置初始内容
+        if (value) {
+          quillRef.current.clipboard.dangerouslyPasteHTML(value);
+        }
+        
+        // 监听内容变化
+        quillRef.current.on('text-change', () => {
+          if (quillRef.current) {
+            onChange(quillRef.current.root.innerHTML);
+          }
+        });
+        
+        isInitializedRef.current = true;
+      }
+    }, []);
+    
+    // 当外部value变化时更新编辑器内容
+    useEffect(() => {
+      if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+        quillRef.current.clipboard.dangerouslyPasteHTML(value);
+      }
+    }, [value]);
+    
+    return (
+      <div className={`quill-container ${className}`}>
+        <div ref={editorRef} />
+      </div>
+    );
+  }
+);
+
+CustomQuillEditor.displayName = 'CustomQuillEditor';
+
+// 添加自定义样式
+const QuillStyles = () => {
+  return (
+    <style jsx global>{`
+      /* 编辑器主容器 */
+      .quill {
+        height: calc(100vh - 12rem);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* 工具栏 */
+      .ql-toolbar {
+        border: 1px solid #e2e8f0;
+        border-top-left-radius: 0.375rem;
+        border-top-right-radius: 0.375rem;
+        background-color: #f8fafc;
+      }
+      
+      /* 内容区域 */
+      .ql-container {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 1rem;
+        line-height: 1.6;
+        flex: 1;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-bottom-left-radius: 0.375rem;
+        border-bottom-right-radius: 0.375rem;
+      }
+      
+      /* 编辑区域 */
+      .ql-editor {
+        min-height: 100%;
+        padding: 1rem;
+      }
+      
+      /* 标题样式 */
+      .ql-editor h1 {
+        font-size: 1.875rem;
+        font-weight: 700;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      
+      .ql-editor h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-top: 1.25rem;
+        margin-bottom: 0.75rem;
+      }
+      
+      .ql-editor h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .ql-editor h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-top: 0.75rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      /* 代码块样式 */
+      .ql-editor pre.ql-syntax {
+        background-color: #282c34;
+        color: #abb2bf;
+        overflow: auto;
+        padding: 1rem;
+        border-radius: 0.375rem;
+      }
+    `}</style>
+  );
+};
+
+// 定义QuillEditor组件
+interface QuillEditorProps {
+  content: string;
+  onChange: (content: string) => void;
+  onHeadingsExtracted?: (headings: Heading[]) => void;
+}
+
+const QuillEditor = ({ content, onChange, onHeadingsExtracted }: QuillEditorProps) => {
+  const quillEditorRef = useRef<QuillEditorRef>(null);
+  
+  // 提取标题
+  useEffect(() => {
+    if (!quillEditorRef.current) return;
+    
+    const extractHeadings = () => {
+      const editor = quillEditorRef.current?.getEditor();
+      if (!editor) return;
+      
+      const content = editor.root.innerHTML;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      const headings: Heading[] = [];
+      const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4');
+      
+      headingElements.forEach((el, index) => {
+        const level = parseInt(el.tagName.substring(1), 10);
+        const id = `heading-${index}`;
+        
+        headings.push({
+          id,
+          text: el.textContent || '',
+          level
+        });
+      });
+      
+      if (onHeadingsExtracted) {
+        onHeadingsExtracted(headings);
+      }
+    };
+    
+    // 延迟提取以确保内容已经渲染
+    const timer = setTimeout(extractHeadings, 100);
+    return () => clearTimeout(timer);
+  }, [content, onHeadingsExtracted]);
+  
+  return (
+    <CustomQuillEditor
+      ref={quillEditorRef}
+      value={content}
+      onChange={onChange}
+      className="min-h-[calc(100vh-15rem)]"
+    />
+  );
+};
+
+export default function NotesPage() {
+  const router = useRouter();
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [noteStatus, setNoteStatus] = useState<'ready' | 'loading' | 'saving'>('loading');
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editorContent, setEditorContent] = useState('');
+  const [editorTitle, setEditorTitle] = useState('');
+  const [documentHeadings, setDocumentHeadings] = useState<Heading[]>([]);
+  // 添加 editorRef 用于访问Quill编辑器实例
+  const editorRef = useRef<QuillEditorRef>(null);
+  const lastSavedContent = useRef('');
+  const extractHeadingsDebounced = useRef<NodeJS.Timeout | null>(null);
+  const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [activeTab, setActiveTab] = useState<"titles" | "time">("titles")
+  const [markdownMode, setMarkdownMode] = useState(false)
+  const [newNoteTitle, setNewNoteTitle] = useState("")
+  
+  // 使用useRef来跟踪编辑器状态，避免不必要的重渲染
+  const isExtractingHeadings = useRef(false);
+  const isComposing = useRef(false); // 添加输入法组合状态跟踪
+  
+  // 记录最后保存的内容
+  // 用于防抖提取标题和自动保存
+
+  const { toast } = useToast()
+
+  // 备忘录表单状态
+  const [noteForm, setNoteForm] = useState({
+    title: "",
+    content: "",
+  })
+
+  // 添加备忘录标题编辑状态
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNoteTitle, setEditingNoteTitle] = useState<string>("");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [shouldKeepEditingFocus, setShouldKeepEditingFocus] = useState(false); // 新增：控制是否应当保持编辑状态
+  const titleInputRef = useRef<HTMLInputElement | null>(null); // 添加输入框引用
+  const isTitleComposing = useRef(false); // 添加一个标志来跟踪输入法编辑状态
+
+  // 获取用户会话
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const session = await getUserSession()
+        if (!session) {
+          router.push("/login")
+          return
+        }
+
+        setUser(session)
+        loadUserNotes(session.id)
+      } catch (error) {
+        console.error("Session error:", error)
+        router.push("/login")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkSession()
+  }, [router])
+
+  // 加载用户备忘录
+  const loadUserNotes = async (userId: string) => {
+    try {
+      const userNotes = await getUserNotes(userId)
+      setNotes(userNotes)
+      
+      // 默认选择第一个备忘录
+      if (userNotes.length > 0 && !selectedNote) {
+        setSelectedNote(userNotes[0])
+        setEditorContent(userNotes[0].content)
+        extractHeadingsFromContent(userNotes[0].content)
+      }
+    } catch (error) {
+      console.error("Error loading notes:", error)
+      toast({
+        title: "加载失败",
+        description: "无法加载备忘录，请稍后再试",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // 从内容中提取标题，更新到Quill格式
+  const extractHeadingsFromContent = (content: string) => {
+    try {
+      if (!editorRef.current || isExtractingHeadings.current) return;
+      
+      isExtractingHeadings.current = true;
+      
+      // 从Quill编辑器中获取内容并提取标题
+      const editor = editorRef.current.getEditor();
+      if (!editor) {
+        isExtractingHeadings.current = false;
+        return;
+      }
+      
+      const contents = editor.getContents();
+      
+      const headings: {id: string, text: string, level: number}[] = [];
+      
+      contents.ops?.forEach((op: any, index: number) => {
+        if (op.attributes && op.attributes.header && typeof op.insert === 'string') {
+          const id = `heading-${index}`;
+          headings.push({
+            id,
+            text: op.insert.trim(),
+            level: op.attributes.header
+          });
+        }
+      });
+      
+      // 只有当标题列表与当前不同时才更新
+      if (JSON.stringify(headings) !== JSON.stringify(documentHeadings)) {
+        setDocumentHeadings(headings);
+      }
+      
+      isExtractingHeadings.current = false;
+    } catch (error) {
+      console.error('提取标题失败:', error);
+      isExtractingHeadings.current = false;
+    }
+  };
+
+  // 使用Quill API插入格式化内容
+  const insertFormattedContent = (formatType: string) => {
+    if (!editorRef.current) return;
+    
+    try {
+      const quill = editorRef.current.getEditor();
+      if (!quill) return;
+      
+      const selection = quill.getSelection(true);
+      
+      if (!selection) {
+        quill.focus();
+        return;
+      }
+      
+      let index = selection.index;
+      let length = selection.length;
+      const selectedText = length > 0 ? quill.getText(index, length) : '';
+      
+      switch(formatType) {
+        case 'h1':
+          quill.format('header', 1);
+          break;
+        case 'h2':
+          quill.format('header', 2);
+          break;
+        case 'h3':
+          quill.format('header', 3);
+          break;
+        case 'h4':
+          quill.format('header', 4);
+          break;
+        case 'code':
+          if (length > 0) {
+            quill.formatText(index, length, 'code-block', true);
+          } else {
+            quill.format('code-block', true);
+          }
+          break;
+        case 'table':
+          // 简单表格实现
+          quill.deleteText(index, length);
+          quill.insertText(index, '\n');
+          quill.insertText(index + 1, '| 标题1 | 标题2 | 标题3 |\n|-------|-------|-------|\n| 内容1 | 内容2 | 内容3 |\n');
+          quill.setSelection(index + 1, 0);
+          break;
+        case 'hr':
+          // 简单分隔线实现
+          quill.deleteText(index, length);
+          quill.insertText(index, '\n');
+          quill.insertText(index + 1, '----------');
+          quill.setSelection(index + 12, 0);
+          break;
+        case 'link':
+          // 插入链接
+          if (length > 0) {
+            quill.formatText(index, length, 'link', 'https://example.com');
+          } else {
+            quill.insertText(index, '链接文本', { 'link': 'https://example.com' });
+            quill.setSelection(index + 4, 0);
+          }
+          break;
+        case 'bookmark':
+          // 书签/锚点功能
+          quill.insertText(index, `#锚点${Date.now()}`, { 'background': '#f0f0f0' });
+          break;
+        case 'checkbox':
+          // 插入复选框
+          if (length > 0) {
+            const lines = selectedText.split('\n');
+            quill.deleteText(index, length);
+            let insertedLength = 0;
+            lines.forEach((line: string, i: number) => {
+              if (line.trim()) {
+                quill.insertText(index + insertedLength, '☐ ' + line + (i < lines.length - 1 ? '\n' : ''));
+                insertedLength += line.length + 3;
+              }
+            });
+          } else {
+            quill.insertText(index, '☐ 待办事项');
+            quill.setSelection(index + 6, 0);
+          }
+          break;
+        case 'ordered-list':
+          quill.format('list', 'ordered');
+          break;
+        case 'unordered-list':
+          quill.format('list', 'bullet');
+          break;
+        default:
+          return;
+      }
+      
+      // 确保编辑器保持焦点
+      setTimeout(() => {
+        quill.focus();
+      }, 10);
+    } catch (error) {
+      console.error('格式化内容时出错:', error);
+    }
+  };
+
+  // 添加新备忘录 - 直接创建，不弹窗
+  const addNewNote = async () => {
+    if (!user) return
+
+    try {
+      const newNoteData = {
+        user_id: user.id,
+        title: newNoteTitle,
+        content: `<h1>开始编辑备忘录...</h1><p>在这里输入内容</p>`,
+      }
+
+      const createdNote = await createNote(newNoteData)
+      if (createdNote) {
+        // 更新列表
+        setNotes([createdNote, ...notes])
+        
+        // 更新内部状态 
+        setSelectedNote(createdNote)
+        setEditorContent(createdNote.content)
+        lastSavedContent.current = createdNote.content;
+        
+        // 直接设置编辑器内容
+        setTimeout(() => {
+          if (editorRef.current) {
+            const editor = editorRef.current.getEditor();
+            if (editor && editor.root) {
+              // 设置内容
+              editor.root.innerHTML = createdNote.content;
+              
+              // 确保聚焦
+              editor.focus();
+              
+              // 手动触发提取标题
+              extractHeadingsFromContent(createdNote.content);
+            }
+          }
+        }, 10);
+        
+        // 自动进入标题编辑模式
+        setEditingNoteId(createdNote.id);
+        setEditingNoteTitle("");
+      }
+    } catch (error) {
+      console.error("Error adding note:", error)
+      toast({
+        title: "添加失败",
+        description: "无法添加备忘录，请稍后再试",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // 选择备忘录
+  const selectNote = (note: Note) => {
+    // 切换前保存当前备忘录
+    if (selectedNote && editorContent !== lastSavedContent.current) {
+      saveEditedNote(true);
+    }
+    
+    // 更新内部状态
+    setSelectedNote(note);
+    setEditorContent(note.content);
+    lastSavedContent.current = note.content;
+    
+    // 直接设置编辑器内容
+    setTimeout(() => {
+      if (editorRef.current) {
+        const editor = editorRef.current.getEditor();
+        if (editor && editor.root) {
+          // 设置内容
+          editor.root.innerHTML = note.content;
+          
+          // 确保聚焦
+          editor.focus();
+          
+          // 手动触发提取标题
+          extractHeadingsFromContent(note.content);
+        }
+      }
+    }, 10);
+  };
+
+  // 滚动到文档内锚点
+  const scrollToHeading = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+
+  // 更新备忘录标题
+  const updateNoteTitle = async (noteId: string, newTitle: string) => {
+    try {
+      const updatedNote = await updateNote(noteId, {
+        title: newTitle
+      });
+      
+      if (updatedNote) {
+        // 更新列表中的备忘录
+        setNotes(notes.map(note => 
+          note.id === noteId ? {...note, title: newTitle} : note
+        ));
+        
+        // 如果是当前选中的备忘录，也更新选中状态
+        if (selectedNote && selectedNote.id === noteId) {
+        setSelectedNote({...selectedNote, title: newTitle});
+        }
+      }
+    } catch (error) {
+      console.error("Error updating note title:", error);
+      toast({
+        title: "更新失败",
+        description: "无法更新备忘录标题，请稍后再试",
+        variant: "destructive",
+      });
+    }
+  }
+
+  // 修改编辑器内容处理函数
+  const handleEditorChange = (content: string) => {
+    setEditorContent(content);
+    
+    // 实现自动保存
+    if (extractHeadingsDebounced.current) {
+      clearTimeout(extractHeadingsDebounced.current);
+    }
+    
+    extractHeadingsDebounced.current = setTimeout(() => {
+      // 提取标题
+      extractHeadingsFromContent(content);
+      
+      // 自动保存
+      if (content !== lastSavedContent.current && selectedNote) {
+        saveEditedNote(true);
+        lastSavedContent.current = content;
+      }
+      
+      extractHeadingsDebounced.current = null;
+    }, 1000);
+  };
+
+  // 保存编辑后的备忘录
+  const saveEditedNote = async (silent: boolean = false) => {
+    if (!selectedNote) return;
+
+    try {
+      // 从内容中提取第一个H1作为标题
+      let newTitle = selectedNote.title;
+      const h1Match = /<h1[^>]*>([^<]+)<\/h1>/i.exec(editorContent);
+      if (h1Match && h1Match[1]) {
+        newTitle = h1Match[1].trim();
+      }
+      
+      // 更新最后保存的内容引用
+      lastSavedContent.current = editorContent;
+
+      const updatedNote = await updateNote(selectedNote.id, {
+        title: newTitle,
+        content: editorContent,
+      });
+
+      if (updatedNote) {
+        // 更新列表中的笔记
+        setNotes(notes.map((note) => (note.id === selectedNote.id ? updatedNote : note)));
+        // 更新选中的笔记
+        setSelectedNote(updatedNote);
+        
+        // 仅在非静默模式下显示成功提示
+        if (!silent) {
+        toast({
+          title: "保存成功",
+          description: "备忘录已更新",
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error updating note:", error);
+      // 仅在非静默模式下显示错误提示
+      if (!silent) {
+      toast({
+        title: "更新失败",
+        description: "无法更新备忘录，请稍后再试",
+        variant: "destructive",
+        });
+    }
+  }
+  };
+
+  // 删除备忘录
+  const deleteNoteItem = async (noteId: string) => {
+    try {
+      const success = await deleteNote(noteId)
+      if (success) {
+        const updatedNotes = notes.filter((note) => note.id !== noteId)
+        setNotes(updatedNotes)
+        
+        // 如果删除的是当前选中的备忘录，选择列表中的第一个
+        if (selectedNote && selectedNote.id === noteId) {
+          if (updatedNotes.length > 0) {
+            setSelectedNote(updatedNotes[0])
+            setEditorContent(updatedNotes[0].content)
+            extractHeadingsFromContent(updatedNotes[0].content)
+          } else {
+            setSelectedNote(null)
+            setEditorContent("")
+            setDocumentHeadings([])
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error)
+      toast({
+        title: "删除失败",
+        description: "无法删除备忘录，请稍后再试",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // 过滤备忘录
+  const filteredNotes = useMemo(() => {
+    return notes.filter(
+      (note) =>
+        note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
+  }, [notes, searchQuery])
+
+  // 格式化日期
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  // 格式化简短日期（只显示日期，不显示时间）
+  const formatShortDate = (timestamp: string) => {
+    return new Date(timestamp).toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+  }
+
+  // 对笔记按创建日期分组
+  const notesByDate = useMemo(() => {
+    const grouped: Record<string, Note[]> = {};
+    
+    filteredNotes.forEach(note => {
+      const dateKey = formatShortDate(note.created_at);
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(note);
+    });
+    
+    // 转换为按日期排序的数组
+    return Object.entries(grouped)
+      .sort((a, b) => new Date(b[0]).getTime() - new Date(a[0]).getTime())
+      .map(([date, notes]) => ({
+        date,
+        notes: notes.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      }));
+  }, [filteredNotes]);
+
+  // 替换原有的编辑区域代码
+  {/* 编辑器主体内容 */}
+  <div className="p-4">
+    <QuillEditor 
+      content={editorContent}
+      onChange={(content) => {
+        setEditorContent(content);
+        
+        // 实现自动保存
+        if (extractHeadingsDebounced.current) {
+          clearTimeout(extractHeadingsDebounced.current);
+        }
+        
+        extractHeadingsDebounced.current = setTimeout(() => {
+          if (content !== lastSavedContent.current && selectedNote) {
+            saveEditedNote(true);
+            lastSavedContent.current = content;
+          }
+          extractHeadingsDebounced.current = null;
+        }, 5000);
+      }}
+      onHeadingsExtracted={(headings) => {
+        setDocumentHeadings(headings);
+      }}
+    />
+  </div>
+
+  // 替换工具栏按钮点击处理程序
+  const handleFormatButtonClick = (format: string) => {
+    const quillInstance = editorRef.current?.getEditor();
+    if (!quillInstance) return;
+    
+    const selection = quillInstance.getSelection();
+    if (!selection) {
+      quillInstance.focus();
+      return;
+    }
+    
+    switch (format) {
+      case 'h1':
+      case 'h2':
+      case 'h3':
+      case 'h4':
+        const headerLevel = parseInt(format.substring(1), 10);
+        quillInstance.format('header', headerLevel);
+        break;
+      case 'bold':
+        quillInstance.format('bold', !quillInstance.getFormat().bold);
+        break;
+      case 'italic':
+        quillInstance.format('italic', !quillInstance.getFormat().italic);
+        break;
+      case 'underline':
+        quillInstance.format('underline', !quillInstance.getFormat().underline);
+        break;
+      case 'code':
+        quillInstance.format('code-block', !quillInstance.getFormat()['code-block']);
+        break;
+      case 'link':
+        const url = prompt('输入链接URL:');
+        if (url) {
+          quillInstance.format('link', url);
+        } else {
+          quillInstance.format('link', false);
+        }
+        break;
+      case 'list-ol':
+        quillInstance.format('list', quillInstance.getFormat().list === 'ordered' ? false : 'ordered');
+        break;
+      case 'list-ul':
+        quillInstance.format('list', quillInstance.getFormat().list === 'bullet' ? false : 'bullet');
+        break;
+      case 'divider':
+        const range = quillInstance.getSelection(true);
+        quillInstance.insertText(range.index, '\n');
+        quillInstance.insertEmbed(range.index + 1, 'divider', true);
+        quillInstance.setSelection(range.index + 2, 0);
+        break;
+    }
+    
+    // 触发内容变化
+    const content = quillInstance.root.innerHTML;
+    setEditorContent(content);
+    if (content !== lastSavedContent.current && selectedNote) {
+      saveEditedNote(true);
+      lastSavedContent.current = content;
+    }
+  };
+
+  // 新增：打开编辑模式函数
+  const startEditingTitle = (note: Note) => {
+    setEditingNoteId(note.id);
+    setEditingNoteTitle(note.title);
+    setIsEditingTitle(true);
+    setShouldKeepEditingFocus(true);
+    
+    // 延迟聚焦以确保输入框已渲染
+    setTimeout(() => {
+      const inputElement = document.querySelector(`input[data-note-id="${note.id}"]`) as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }, 50);
+  };
+  
+  // 新增：完成编辑函数
+  const finishEditingTitle = (noteId: string, save: boolean = true) => {
+    if (save) {
+      updateNoteTitle(noteId, editingNoteTitle);
+    }
+    setEditingNoteId(null);
+    setIsEditingTitle(false);
+    setShouldKeepEditingFocus(false);
+  };
+
+  // 处理点击事件，检查是否点击了编辑框外部
+  useEffect(() => {
+    if (!editingNoteId) return;
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      // 如果正在使用输入法编辑，不关闭
+      if (isTitleComposing.current) return;
+      
+      // 获取当前正在编辑的输入框元素
+      const inputElement = document.querySelector(`input[data-note-id="${editingNoteId}"]`) as HTMLInputElement;
+      
+      // 如果点击的不是输入框或其子元素，则关闭编辑框
+      if (inputElement && !inputElement.contains(event.target as Node)) {
+        updateNoteTitle(editingNoteId, editingNoteTitle);
+        setEditingNoteId(null);
+        setIsEditingTitle(false);
+      }
+    };
+    
+    // 延迟添加事件监听器，避免立即触发
+    const timer = setTimeout(() => {
+      document.addEventListener('mousedown', handleClickOutside);
+    }, 200);
+    
+    // 创建一个间隔检查，确保输入框始终保持聚焦
+    const focusCheckInterval = setInterval(() => {
+      const inputElement = document.querySelector(`input[data-note-id="${editingNoteId}"]`) as HTMLInputElement;
+      if (inputElement && document.activeElement !== inputElement) {
+        inputElement.focus();
+      }
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      clearInterval(focusCheckInterval);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [editingNoteId, editingNoteTitle]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4">加载中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <QuillStyles />
+      <div className="w-full h-screen overflow-hidden relative bg-stone-50 dark:bg-slate-950">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* 主侧边栏：笔记列表 */}
+          <ResizablePanel defaultSize={20} minSize={15} maxSize={30} className="border-r h-full">
+            <div className="flex flex-col h-full">
+              {/* 搜索和添加区 */}
+              <div className="p-3 border-b flex items-center space-x-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索备忘录..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9 text-sm w-full"
+                  />
+                </div>
+                <Button
+                  onClick={addNewNote}
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 w-9 p-0 flex-shrink-0"
+                >
+                  <PlusCircle className="h-5 w-5" />
+                </Button>
+              </div>
+              
+              {/* 切换类型Tab */}
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "titles" | "time")} className="px-3 py-2">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="titles">
+                    <AlignLeft className="h-3.5 w-3.5 mr-2" />
+                    标题
+                  </TabsTrigger>
+                  <TabsTrigger value="time">
+                    <CalendarDays className="h-3.5 w-3.5 mr-2" />
+                    时间
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              
+              {/* 备忘录列表 */}
+              <ScrollArea className="flex-grow h-full">
+                {filteredNotes.length > 0 ? (
+                  <div className="space-y-1 p-2">
+                    {activeTab === "titles" ? (
+                      // 按标题列表显示
+                      filteredNotes
+                        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+                        .map((note) => (
+                          <div 
+                            key={note.id} 
+                            className={`p-3 rounded cursor-pointer hover:bg-muted transition-colors ${selectedNote?.id === note.id ? 'bg-muted' : ''}`}
+                            onClick={() => selectNote(note)}
+                          >
+                            <div className="flex items-start justify-between">
+                              {editingNoteId === note.id ? (
+                                <Input
+                                  ref={titleInputRef}
+                                  autoFocus
+                                  data-note-id={note.id}
+                                  className="text-sm font-medium"
+                                  value={editingNoteTitle}
+                                  onChange={(e) => setEditingNoteTitle(e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      updateNoteTitle(note.id, editingNoteTitle);
+                                      setEditingNoteId(null);
+                                      setIsEditingTitle(false);
+                                    } else if (e.key === 'Escape') {
+                                      setEditingNoteId(null);
+                                      setIsEditingTitle(false);
+                                    }
+                                  }}
+                                  onFocus={() => setIsEditingTitle(true)}
+                                  onCompositionStart={() => {
+                                    isTitleComposing.current = true;
+                                  }}
+                                  onCompositionEnd={() => {
+                                    isTitleComposing.current = false;
+                                  }}
+                                />
+                              ) : (
+                                <h3 
+                                  className="font-medium text-sm break-words mr-2 flex-grow"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingNoteId(note.id);
+                                    setEditingNoteTitle(note.title);
+                                    setIsEditingTitle(true);
+                                    
+                                    // 延迟聚焦以确保输入框已渲染
+                                    setTimeout(() => {
+                                      const inputElement = document.querySelector(`input[data-note-id="${note.id}"]`) as HTMLInputElement;
+                                      if (inputElement) {
+                                        inputElement.focus();
+                                      }
+                                    }, 50);
+                                  }}
+                                >
+                                  {note.title || "请输入标题"}
+                                </h3>
+                              )}
+                              <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0" onClick={(e) => {
+                                e.stopPropagation();
+                                deleteNoteItem(note.id);
+                              }}>
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex justify-between items-center mt-1 text-xs text-muted-foreground">
+                              <span>创建: {formatShortDate(note.created_at)}</span>
+                              <span>修改: {formatShortDate(note.updated_at)}</span>
+                            </div>
+                          </div>
+                        ))
+                    ) : (
+                      // 按时间分组显示
+                      notesByDate.map(({ date, notes }) => (
+                        <div key={date} className="mb-4">
+                          <h3 className="text-xs font-semibold text-muted-foreground px-2 mb-1">{date}</h3>
+                          {notes.map(note => (
+                            <div 
+                              key={note.id} 
+                              className={`p-3 rounded cursor-pointer hover:bg-muted transition-colors ${selectedNote?.id === note.id ? 'bg-muted' : ''}`}
+                              onClick={() => selectNote(note)}
+                            >
+                              <div className="flex items-start justify-between">
+                                {editingNoteId === note.id ? (
+                                  <Input
+                                    ref={titleInputRef}
+                                    autoFocus
+                                    data-note-id={note.id}
+                                    className="text-sm font-medium"
+                                    value={editingNoteTitle}
+                                    onChange={(e) => setEditingNoteTitle(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        updateNoteTitle(note.id, editingNoteTitle);
+                                        setEditingNoteId(null);
+                                        setIsEditingTitle(false);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingNoteId(null);
+                                        setIsEditingTitle(false);
+                                      }
+                                    }}
+                                    onFocus={() => setIsEditingTitle(true)}
+                                    onCompositionStart={() => {
+                                      isTitleComposing.current = true;
+                                    }}
+                                    onCompositionEnd={() => {
+                                      isTitleComposing.current = false;
+                                    }}
+                                  />
+                                ) : (
+                                  <h3 
+                                    className="font-medium text-sm break-words mr-2 flex-grow"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingNoteId(note.id);
+                                      setEditingNoteTitle(note.title);
+                                      setIsEditingTitle(true);
+                                      
+                                      // 延迟聚焦以确保输入框已渲染
+                                      setTimeout(() => {
+                                        const inputElement = document.querySelector(`input[data-note-id="${note.id}"]`) as HTMLInputElement;
+                                        if (inputElement) {
+                                          inputElement.focus();
+                                        }
+                                      }, 50);
+                                    }}
+                                  >
+                                    {note.title || "请输入标题"}
+                                  </h3>
+                                )}
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0 flex-shrink-0" onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteNoteItem(note.id);
+                                }}>
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="flex justify-between items-center mt-1 text-xs text-muted-foreground">
+                                <span>创建: {formatShortDate(note.created_at)}</span>
+                                <span>修改: {formatShortDate(note.updated_at)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    {searchQuery ? "没有找到匹配的备忘录" : "暂无备忘录，点击右上角添加"}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          {/* 主内容区域：富文本编辑器 */}
+          <ResizablePanel defaultSize={65} className="h-full">
+              {selectedNote ? (
+              <div className="flex flex-col h-full">
+                {/* 编辑器内容区 - 占据整个面板 */}
+                <div className="flex-1 overflow-auto h-full">
+                  {/* 编辑器工具栏放在编辑区域内部 - 固定在顶部 */}
+                  <div className="sticky top-0 bg-background z-10 border-b py-2 px-4 flex flex-wrap items-center gap-2">
+                    <div className="flex items-center space-x-2 mr-4">
+                      <ToggleGroup type="single" defaultValue="h1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <ToggleGroupItem 
+                                value="h1" 
+                                aria-label="大标题"
+                                onClick={() => handleFormatButtonClick('h1')}
+                              >
+                                <Type className="h-4 w-4" />
+                                <span className="ml-1">H1</span>
+                              </ToggleGroupItem>
+                            </TooltipTrigger>
+                            <TooltipContent>大标题</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <ToggleGroupItem 
+                                value="h2" 
+                                aria-label="中标题"
+                                onClick={() => handleFormatButtonClick('h2')}
+                              >
+                                <Type className="h-3.5 w-3.5" />
+                                <span className="ml-1">H2</span>
+                              </ToggleGroupItem>
+                            </TooltipTrigger>
+                            <TooltipContent>中标题</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <ToggleGroupItem 
+                                value="h3" 
+                                aria-label="小标题"
+                                onClick={() => handleFormatButtonClick('h3')}
+                              >
+                                <Type className="h-3 w-3" />
+                                <span className="ml-1">H3</span>
+                              </ToggleGroupItem>
+                            </TooltipTrigger>
+                            <TooltipContent>小标题</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <ToggleGroupItem 
+                                value="h4" 
+                                aria-label="小标题"
+                                onClick={() => handleFormatButtonClick('h4')}
+                              >
+                                <Type className="h-2.5 w-2.5" />
+                                <span className="ml-1">H4</span>
+                              </ToggleGroupItem>
+                            </TooltipTrigger>
+                            <TooltipContent>小标题</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </ToggleGroup>
+                    </div>
+                    
+                    <Separator orientation="vertical" className="h-6 mx-2" />
+                    
+                    <div className="flex items-center space-x-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('code')}
+                            >
+                              <Code className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入代码块</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('checkbox')}
+                            >
+                              <CheckSquare className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入待办事项</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('ordered-list')}
+                            >
+                              <ListOrdered className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入有序列表</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('unordered-list')}
+                            >
+                              <List className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入无序列表</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('table')}
+                            >
+                              <Table className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入表格</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('divider')}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入分割线</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('link')}
+                            >
+                              <LinkIcon className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入链接</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleFormatButtonClick('bookmark')}
+                            >
+                              <Bookmark className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>插入锚点</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    
+                    <Separator orientation="vertical" className="h-6 mx-2" />
+                    
+                    <div className="flex items-center space-x-2">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant={markdownMode ? "default" : "ghost"}
+                              size="sm" 
+                              className="h-8"
+                              onClick={() => setMarkdownMode(!markdownMode)}
+                            >
+                              <AlignJustify className="h-4 w-4 mr-2" />
+                              Markdown模式
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>切换Markdown语法模式</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    
+                    <div className="ml-auto">
+                      <Button onClick={() => saveEditedNote(false)} size="sm">
+                        <CheckSquare className="h-4 w-4 mr-2" />
+                        保存
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* 编辑器主体内容 */}
+                  <div className="p-4">
+                    <QuillEditor 
+                      content={editorContent}
+                      onChange={(content) => {
+                        setEditorContent(content);
+                        
+                        // 实现自动保存
+                        if (extractHeadingsDebounced.current) {
+                          clearTimeout(extractHeadingsDebounced.current);
+                        }
+                        
+                        extractHeadingsDebounced.current = setTimeout(() => {
+                          if (content !== lastSavedContent.current && selectedNote) {
+                            saveEditedNote(true);
+                            lastSavedContent.current = content;
+                          }
+                          extractHeadingsDebounced.current = null;
+                        }, 5000);
+                      }}
+                      onHeadingsExtracted={(headings) => {
+                        setDocumentHeadings(headings);
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center h-full">
+                <div className="text-center">
+                  <FileIcon className="h-16 w-16 mx-auto text-muted-foreground" />
+                  <h2 className="mt-2 text-xl font-semibold">暂无选择的备忘录</h2>
+                  <p className="text-muted-foreground mt-1">选择一个备忘录或创建新备忘录</p>
+                  <Button
+                    onClick={addNewNote}
+                    className="mt-4"
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" /> 新建备忘录
+                  </Button>
+                </div>
+              </div>
+            )}
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          {/* 文档目录侧边栏 - 作为独立面板 */}
+          <ResizablePanel defaultSize={15} minSize={10} maxSize={20} className="border-l h-full">
+            {selectedNote ? (
+              <div className="h-full flex flex-col">
+                <div className="p-2 border-b flex-shrink-0">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <Hash className="h-4 w-4 mr-1" />
+                          文档目录
+                        </h3>
+                </div>
+                        
+                        {/* 从文档内容中提取的标题列表，作为目录 */}
+                <ScrollArea className="flex-grow py-1 px-2">
+                  <div className="space-y-0.5 text-xs">
+                            {documentHeadings.length > 0 ? (
+                              documentHeadings.map((heading, index) => (
+                                <div 
+                                  key={index}
+                      className="py-0.5 cursor-pointer hover:bg-muted truncate"
+                      style={{ paddingLeft: `${heading.level * 6}px` }}
+                                  onClick={() => scrollToHeading(heading.id)}
+                                >
+                                  {heading.text}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-xs text-muted-foreground">文档中暂无标题结构</p>
+                            )}
+                          </div>
+                        </ScrollArea>
+                
+                <div className="p-2 border-t mt-auto flex-shrink-0">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <Clock className="h-4 w-4 mr-1" />
+                          文档信息
+                        </h3>
+                  <div className="space-y-1 mt-1 text-xs text-muted-foreground">
+                    <p>创建: {formatShortDate(selectedNote.created_at)}</p>
+                    <p>更新: {formatShortDate(selectedNote.updated_at)}</p>
+                    <p>字数: {editorContent.replace(/<[^>]*>/g, '').length}</p>
+                        </div>
+                      </div>
+                    </div>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-xs text-muted-foreground px-2">
+                  选择或创建一个备忘录来显示目录
+                </p>
+                </div>
+              )}
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+    </>
+  )
+}
+

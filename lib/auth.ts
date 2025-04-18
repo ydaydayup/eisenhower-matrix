@@ -54,9 +54,63 @@ export const getSession = async (): Promise<Session | null> => {
   }
 }
 
-// 获取用户会话（客户端版本）
+// 获取用户会话（客户端版本）- 更安全的实现
 export const getUserSession = async (): Promise<Session | null> => {
-  return getSession()
+  try {
+    // 使用getUser()而不是getSession()，这会验证token的真实性
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      console.log("No authenticated user found:", error)
+      return null;
+    }
+    
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("id", user.id)
+        .single();
+  
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        // 返回基本用户信息
+        return {
+          id: user.id,
+          name: user.email?.split("@")[0] || "",
+          email: user.email || "",
+        };
+      }
+  
+      return {
+        id: user.id,
+        name: profile?.name || user.email?.split("@")[0] || "",
+        email: user.email || "",
+      };
+    } catch (err) {
+      console.error("Error in getUserSession profile fetch:", err);
+      // 出错时返回基本用户信息
+      return {
+        id: user.id,
+        name: user.email?.split("@")[0] || "",
+        email: user.email || "",
+      };
+    }
+  } catch (err) {
+    console.error("Error in getUserSession:", err);
+    return null;
+  }
+}
+
+// 验证用户认证状态 - 提供一个明确用于安全检查的函数
+export const verifyUserAuthentication = async (): Promise<boolean> => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    return !error && !!user;
+  } catch (err) {
+    console.error("Error verifying user authentication:", err);
+    return false;
+  }
 }
 
 // 退出登录
