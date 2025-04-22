@@ -50,20 +50,45 @@ export const updateNote = async (
   updates: Partial<Omit<Note, "id" | "created_at" | "updated_at">>,
 ): Promise<Note | null> => {
   const supabase = getSupabaseClient()
+  
+  try {
+    console.log(`准备更新备忘录 ${id}`, {
+      title_length: updates.title?.length,
+      content_length: updates.content?.length,
+      timestamp: new Date().toISOString()
+    });
+    
+    // 确保content是字符串类型
+    const safeUpdates = {
+      ...updates,
+      content: typeof updates.content === 'string' ? updates.content : '',
+      updated_at: new Date().toISOString()
+    };
+    
+    // 执行更新操作
+    const { data, error } = await supabase
+      .from("notes")
+      .update(safeUpdates)
+      .eq("id", id)
+      .select()
+      .single()
 
-  const { data, error } = await supabase
-    .from("notes")
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single()
+    if (error) {
+      console.error("Error updating note:", error);
+      console.error("Error details:", error.message, error.details, error.hint);
+      return null;
+    }
 
-  if (error) {
-    console.error("Error updating note:", error)
-    return null
+    console.log(`备忘录 ${id} 更新成功`, {
+      returned_data: !!data,
+      updated_at: data?.updated_at
+    });
+    
+    return data;
+  } catch (err) {
+    console.error(`更新备忘录时发生意外错误:`, err);
+    return null;
   }
-
-  return data
 }
 
 // 删除备忘录
