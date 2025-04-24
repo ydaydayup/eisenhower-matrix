@@ -1,4 +1,6 @@
-import {useEffect, useRef} from 'react'
+"use client"
+
+import {useEffect, useRef, useState} from 'react'
 import {AiEditor} from "aieditor";
 import "aieditor/dist/style.css"
 
@@ -6,6 +8,7 @@ interface AiEditorAppProps {
     content: string;
     onChange: (content: string) => void;
 }
+
 
 function AiEditorApp({ content, onChange }: AiEditorAppProps) {
     const divRef = useRef<HTMLDivElement>(null);
@@ -49,7 +52,8 @@ function AiEditorApp({ content, onChange }: AiEditorAppProps) {
     }, [content]);
 
     return (
-        <div ref={divRef} style={{height: "100%"}} />
+
+            <div ref={divRef} style={{height: "100%"}} />
     )
 }
 

@@ -22,30 +22,9 @@ export default async function DashboardLayout({
                                               }: {
     children: React.ReactNode
 }) {
-    // 在开发环境中记录环境状态
-    if (isDevelopment) {
-        console.log("[DEV] 当前环境:", process.env.NODE_ENV)
-        console.log("[DEV] 绕过认证设置:", DEV_BYPASS_AUTH ? "启用" : "禁用")
-    }
+
 
     try {
-        // 开发环境下，只有当DEV_BYPASS_AUTH为true时才绕过认证
-        if (isDevelopment && DEV_BYPASS_AUTH) {
-            console.log("[DEV] 开发环境：使用测试用户绕过认证")
-            return (
-                <div className="flex flex-col md:flex-row h-screen">
-                    <Sidebar user={DEV_TEST_USER}/>
-                    <div className="flex-1 overflow-auto pb-16 md:pb-0">
-                        <div className="px-4 pt-4">
-                            <DevBypassTest/>
-                        </div>
-                        {children}
-                        <PWAInstallButton/>
-                    </div>
-                </div>
-            )
-        }
-
         // 生产环境正常流程：使用服务器端 Supabase 客户端
         const supabase = await createClient()
 
