@@ -1,3 +1,5 @@
+import withPWA from 'next-pwa'
+
 let userConfig = undefined
 try {
   userConfig = await import('./v0-user-next.config')
@@ -50,4 +52,38 @@ function mergeConfig(nextConfig, userConfig) {
   }
 }
 
-export default nextConfig
+const isDevelopment = process.env.NODE_ENV === 'development'
+
+const pwaConfig = {
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: isDevelopment,
+  buildExcludes: [/middleware-manifest\.json$/],
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'google-fonts',
+        expiration: {
+          maxEntries: 20,
+          maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+        }
+      }
+    },
+    {
+      urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'static-font-assets',
+        expiration: {
+          maxEntries: 20,
+          maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+        }
+      }
+    }
+  ]
+}
+
+export default isDevelopment ? nextConfig : withPWA(pwaConfig)(nextConfig)

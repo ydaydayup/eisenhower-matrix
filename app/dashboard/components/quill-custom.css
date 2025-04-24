@@ -1,0 +1,142 @@
+/* Obsidian风格的列表连接线和勾选列表样式 */
+
+/* 通用列表样式 */
+.ql-editor ul, .ql-editor ol {
+  position: relative;
+  padding-left: 1.5em;
+}
+
+/* 无序列表样式 */
+.ql-editor ul > li {
+  position: relative;
+}
+
+.ql-editor ul > li::before {
+  content: '';
+  position: absolute;
+  left: -1.5em;
+  top: 0.8em;
+  height: calc(100% - 0.6em);
+  width: 1.5px;
+  background-color: #e2e8f0;
+}
+
+.dark .ql-editor ul > li::before {
+  background-color: #4a5568;
+}
+
+.ql-editor ul > li:last-child::before {
+  height: 0;
+}
+
+.ql-editor ul > li::after {
+  content: '';
+  position: absolute;
+  left: -1.5em;
+  top: 0.8em;
+  width: 0.75em;
+  height: 1.5px;
+  background-color: #e2e8f0;
+}
+
+.dark .ql-editor ul > li::after {
+  background-color: #4a5568;
+}
+
+/* 有序列表样式 */
+.ql-editor ol > li {
+  position: relative;
+}
+
+.ql-editor ol > li::before {
+  content: '';
+  position: absolute;
+  left: -1.2em;
+  top: 0.8em;
+  height: calc(100% - 0.6em);
+  width: 1.5px;
+  background-color: #e2e8f0;
+}
+
+.dark .ql-editor ol > li::before {
+  background-color: #4a5568;
+}
+
+.ql-editor ol > li:last-child::before {
+  height: 0;
+}
+
+.ql-editor ol > li::after {
+  content: '';
+  position: absolute;
+  left: -1.2em;
+  top: 0.8em;
+  width: 0.5em;
+  height: 1.5px;
+  background-color: #e2e8f0;
+}
+
+.dark .ql-editor ol > li::after {
+  background-color: #4a5568;
+}
+
+/* 勾选列表样式 */
+.ql-editor ul[data-checked] > li {
+  position: relative;
+}
+
+.ql-editor ul[data-checked] > li::before {
+  content: '';
+  position: absolute;
+  left: -1.5em;
+  top: 0.8em;
+  height: calc(100% - 0.6em);
+  width: 1.5px;
+  background-color: #e2e8f0;
+}
+
+.dark .ql-editor ul[data-checked] > li::before {
+  background-color: #4a5568;
+}
+
+.ql-editor ul[data-checked] > li:last-child::before {
+  height: 0;
+}
+
+.ql-editor ul[data-checked] > li::after {
+  content: '';
+  position: absolute;
+  left: -1.5em;
+  top: 0.8em;
+  width: 0.75em;
+  height: 1.5px;
+  background-color: #e2e8f0;
+}
+
+.dark .ql-editor ul[data-checked] > li::after {
+  background-color: #4a5568;
+}
+
+/* 已勾选的项目样式 */
+.ql-editor ul[data-checked="true"] > li {
+  text-decoration: line-through !important;
+  color: #6b7280 !important;
+}
+
+/* 工具栏中文翻译 */
+.ql-toolbar .ql-bold::after {
+  content: "加粗";
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.ql-toolbar button:hover::after {
+  opacity: 1;
+} 

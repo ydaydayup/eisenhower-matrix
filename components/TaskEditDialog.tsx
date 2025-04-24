@@ -6,6 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Task } from "@/lib/tasks"
 import { Textarea } from "@/components/ui/textarea"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { format } from "date-fns"
+import { zhCN } from 'date-fns/locale'
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
 interface TaskEditDialogProps {
   open: boolean
@@ -30,9 +36,27 @@ export default function TaskEditDialog({
   taskForm,
   setTaskForm,
 }: TaskEditDialogProps) {
+  const getCurrentDateTime = () => {
+    if (!taskForm.due_date) return undefined
+    try {
+      const date = new Date(taskForm.due_date)
+      if (!isNaN(date.getTime())) {
+        return date
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error)
+    }
+    return undefined
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[850px]">
+      <DialogContent 
+        className="sm:max-w-[850px] max-h-[90vh] overflow-y-auto overflow-x-hidden dialog-scrollbar" 
+        style={{ 
+          paddingRight: "16px"
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{task ? "编辑任务" : "新建任务"}</DialogTitle>
         </DialogHeader>
@@ -68,11 +92,116 @@ export default function TaskEditDialog({
 
           <div>
             <label className="text-sm font-medium">截止日期</label>
-            <Input
-              type="date"
-              value={taskForm.due_date}
-              onChange={(e) => setTaskForm({ ...taskForm, due_date: e.target.value })}
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !taskForm.due_date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {taskForm.due_date ? (
+                    format(new Date(taskForm.due_date), "yyyy年MM月dd日 HH:mm")
+                  ) : (
+                    "选择日期和时间"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <div className="p-3 border-b">
+                  <Calendar
+                    mode="single"
+                    selected={getCurrentDateTime()}
+                    onSelect={(date) => {
+                      if (date) {
+                        // 保留当前时间或设置默认时间
+                        const currentDate = getCurrentDateTime();
+                        const newDate = new Date(date);
+                        if (currentDate) {
+                          newDate.setHours(currentDate.getHours());
+                          newDate.setMinutes(currentDate.getMinutes());
+                        } else {
+                          newDate.setHours(12);
+                          newDate.setMinutes(0);
+                        }
+                        setTaskForm({ ...taskForm, due_date: newDate.toISOString() });
+                      }
+                    }}
+                    initialFocus
+                    locale={zhCN}
+                    fromDate={new Date()}
+                  />
+                </div>
+                
+                <div className="p-3 border-b">
+                  <div className="flex justify-between items-center gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground">小时</label>
+                      <Select
+                        value={getCurrentDateTime()?.getHours().toString() || "12"}
+                        onValueChange={(value) => {
+                          const date = getCurrentDateTime() || new Date();
+                          date.setHours(parseInt(value));
+                          setTaskForm({ ...taskForm, due_date: date.toISOString() });
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="时" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({length: 24}, (_, i) => (
+                            <SelectItem key={i} value={i.toString()}>
+                              {i < 10 ? `0${i}` : i}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs text-muted-foreground">分钟</label>
+                      <Select
+                        value={getCurrentDateTime()?.getMinutes().toString() || "0"}
+                        onValueChange={(value) => {
+                          const date = getCurrentDateTime() || new Date();
+                          date.setMinutes(parseInt(value));
+                          setTaskForm({ ...taskForm, due_date: date.toISOString() });
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="分" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[0, 15, 30, 45].map((minute) => (
+                            <SelectItem key={minute} value={minute.toString()}>
+                              {minute < 10 ? `0${minute}` : minute}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-3 flex justify-between">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setTaskForm({ ...taskForm, due_date: "" })}
+                    size="sm"
+                  >
+                    清除
+                  </Button>
+                  <Button 
+                    onClick={() => {/* 自动关闭 popover */}} 
+                    size="sm"
+                  >
+                    确定
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>

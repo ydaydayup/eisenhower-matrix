@@ -376,3 +376,37 @@
   @apply text-center text-sm font-medium text-gray-500 py-1;
 }
 
+/* 自定义滚动条样式 */
+/* 用于对话框和模态框中的滚动条 */
+.dialog-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.dialog-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  background-color: transparent;
+}
+
+.dialog-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dialog-scrollbar::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* 修复滚动条影响边框圆角的问题 */
+.preserve-border-radius {
+  border-radius: var(--radius);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  overflow: hidden;
+  /* 移除会干扰居中定位的transform */
+  will-change: transform;
+  /* transform: translateZ(0); */
+}
+
