@@ -418,20 +418,6 @@ export default function Dashboard() {
                                             <p className="text-sm text-gray-500">{quadrant.subtitle}</p>
                                         </div>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="rounded-full hover:bg-white/50"
-                                        onClick={() => {
-                                            setEditingTask({
-                                                ...editingTask,
-                                                quadrant: quadrant.id as 1 | 2 | 3 | 4
-                                            });
-                                            openEditModal();
-                                        }}
-                                    >
-                                        <PlusCircle className={cn("h-5 w-5", quadrant.color)}/>
-                                    </Button>
                                 </div>
                                 <div
                                     className="text-right text-xs text-gray-500 mb-2">{getQuadrantTasks(quadrant.id).length} 项

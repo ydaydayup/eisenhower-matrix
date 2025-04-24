@@ -8,15 +8,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Task } from "@/lib/tasks"
 import { Tag } from "@/lib/tags"
-import { Eye } from "lucide-react"
+import { Eye, Calendar as CalendarIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
+import { zhCN } from 'date-fns/locale'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { createTask, updateTask } from "@/lib/tasks"
+import { Calendar } from "@/components/ui/calendar"
 
 interface TaskEditModalProps {
   open: boolean
@@ -143,17 +145,15 @@ export default function TaskEditModal({
     }
   }
 
-  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDateTime = e.target.value
-    if (!newDateTime) {
+  const handleDateTimeChange = (date: Date | undefined) => {
+    if (!date) {
       setTaskForm({ ...taskForm, due_date: "" })
       return
     }
 
     try {
-      const dateObj = new Date(newDateTime)
-      if (!isNaN(dateObj.getTime())) {
-        setTaskForm({ ...taskForm, due_date: dateObj.toISOString() })
+      if (!isNaN(date.getTime())) {
+        setTaskForm({ ...taskForm, due_date: date.toISOString() })
       }
     } catch (error) {
       console.error("日期时间处理错误:", error)
@@ -161,16 +161,16 @@ export default function TaskEditModal({
   }
 
   const getCurrentDateTime = () => {
-    if (!taskForm.due_date) return ''
+    if (!taskForm.due_date) return undefined
     try {
       const date = new Date(taskForm.due_date)
       if (!isNaN(date.getTime())) {
-        return format(date, "yyyy-MM-dd'T'HH:mm")
+        return date
       }
     } catch (error) {
       console.error('Error parsing date:', error)
     }
-    return ''
+    return undefined
   }
 
   const handleSubmit = async () => {
@@ -228,178 +228,290 @@ export default function TaskEditModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[800px] p-2 glass-card border-0 max-h-[90vh] w-[95%] sm:w-[85%] md:w-4/5">
-        <div className="overflow-y-auto max-h-[calc(90vh-4rem)] p-2">
-          <DialogHeader>
-            <DialogTitle className="text-xl text-center text-foreground">
-              {task ? "编辑任务" : "添加任务"}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
+      <DialogContent 
+        className="max-w-[800px] glass-card border-0 max-h-[90vh] w-[95%] sm:w-[85%] md:w-4/5 overflow-y-auto overflow-x-hidden dialog-scrollbar" 
+        style={{ 
+          paddingRight: "16px"
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle className="text-xl text-center text-foreground">
+            {task ? "编辑任务" : "添加任务"}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-4">
+          <div>
+            <label className="text-base font-medium text-gray-700">任务名称</label>
+            <Input
+              ref={titleInputRef}
+              value={taskForm.title}
+              onChange={(e) => handleChange("title", e.target.value)}
+              placeholder="输入任务名称"
+              className="mt-2 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring h-12 text-lg"
+              autoFocus={false}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-base font-medium text-gray-700">任务名称</label>
-              <Input
-                ref={titleInputRef}
-                value={taskForm.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                placeholder="输入任务名称"
-                className="mt-2 glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring h-12 text-lg"
-                autoFocus={false}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-base font-medium text-gray-700">优先级（象限）</label>
-                <Select
-                  value={taskForm.quadrant.toString()}
-                  onValueChange={(value) => setTaskForm({ ...taskForm, quadrant: parseInt(value) as 1 | 2 | 3 | 4 })}
-                >
-                  <SelectTrigger className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring">
-                    <SelectValue placeholder="选择优先级" />
-                  </SelectTrigger>
-                  <SelectContent className="glass-morphism border-0">
-                    <SelectItem value="1">
-                      <div className="flex items-center">
-                        <span className="mr-2">⚡</span>
-                        象限一 - 紧急且重要
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="2">
-                      <div className="flex items-center">
-                        <span className="mr-2">🎯</span>
-                        象限二 - 重要不紧急
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="3">
-                      <div className="flex items-center">
-                        <span className="mr-2">⏱️</span>
-                        象限三 - 紧急不重要
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="4">
-                      <div className="flex items-center">
-                        <span className="mr-2">🌱</span>
-                        象限四 - 不紧急不重要
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-base font-medium text-gray-700">预计完成时间</label>
-                <Input
-                  type="datetime-local"
-                  value={getCurrentDateTime()}
-                  onChange={handleDateTimeChange}
-                  className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
-                />
-              </div>
+              <label className="text-base font-medium text-gray-700">优先级（象限）</label>
+              <Select
+                value={taskForm.quadrant.toString()}
+                onValueChange={(value) => setTaskForm({ ...taskForm, quadrant: parseInt(value) as 1 | 2 | 3 | 4 })}
+              >
+                <SelectTrigger className="mt-2 glass-morphism border-0 focus:ring-1 focus:ring-ring">
+                  <SelectValue placeholder="选择优先级" />
+                </SelectTrigger>
+                <SelectContent className="glass-morphism border-0">
+                  <SelectItem value="1">
+                    <div className="flex items-center">
+                      <span className="mr-2">⚡</span>
+                      紧急且重要
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="2">
+                    <div className="flex items-center">
+                      <span className="mr-2">🎯</span>
+                      重要不紧急
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="3">
+                    <div className="flex items-center">
+                      <span className="mr-2">⏱️</span>
+                      紧急不重要
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="4">
+                    <div className="flex items-center">
+                      <span className="mr-2">🌱</span>
+                      不紧急不重要
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <label className="text-base font-medium text-gray-700">标签</label>
-              <Popover open={openTagSelect} onOpenChange={setOpenTagSelect}>
+              <label className="text-base font-medium text-gray-700">预计完成时间</label>
+              <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    role="combobox"
-                    aria-expanded={openTagSelect}
-                    className="mt-2 w-full justify-between glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+                    className={cn(
+                      "mt-2 w-full justify-start text-left font-normal glass-morphism border-0 focus:ring-1 focus:ring-ring h-12",
+                      !taskForm.due_date && "text-muted-foreground"
+                    )}
                   >
-                    <span className="flex gap-1 flex-wrap">
-                      {taskForm.tags.length > 0 ? (
-                        taskForm.tags.map(tag => (
-                          <Badge key={tag} variant="secondary" className="mr-1">
-                            {tag}
-                          </Badge>
-                        ))
-                      ) : (
-                        "选择标签..."
-                      )}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {taskForm.due_date ? (
+                      format(new Date(taskForm.due_date), "yyyy年MM月dd日 HH:mm")
+                    ) : (
+                      "选择日期和时间"
+                    )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="搜索标签..." />
-                    <CommandEmpty>未找到标签</CommandEmpty>
-                    <CommandGroup>
-                      {tags.map((tag) => (
-                        <CommandItem
-                          key={tag.id}
-                          onSelect={() => {
-                            const newTags = taskForm.tags.includes(tag.name)
-                              ? taskForm.tags.filter(t => t !== tag.name)
-                              : [...taskForm.tags, tag.name]
-                            setTaskForm({ ...taskForm, tags: newTags })
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="p-3 border-b">
+                    <Calendar
+                      mode="single"
+                      selected={getCurrentDateTime()}
+                      onSelect={(date) => {
+                        if (date) {
+                          // 保留当前时间或设置默认时间
+                          const currentDate = getCurrentDateTime();
+                          const newDate = new Date(date);
+                          if (currentDate) {
+                            newDate.setHours(currentDate.getHours());
+                            newDate.setMinutes(currentDate.getMinutes());
+                          } else {
+                            newDate.setHours(12);
+                            newDate.setMinutes(0);
+                          }
+                          handleDateTimeChange(newDate);
+                        }
+                      }}
+                      initialFocus
+                      locale={zhCN}
+                      fromDate={new Date()}
+                    />
+                  </div>
+                  
+                  <div className="p-3 border-b">
+                    <div className="flex justify-between items-center gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground">小时</label>
+                        <Select
+                          value={getCurrentDateTime()?.getHours().toString() || "12"}
+                          onValueChange={(value) => {
+                            const date = getCurrentDateTime() || new Date();
+                            date.setHours(parseInt(value));
+                            handleDateTimeChange(date);
                           }}
                         >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              taskForm.tags.includes(tag.name) ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {tag.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="时" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Array.from({length: 24}, (_, i) => (
+                              <SelectItem key={i} value={i.toString()}>
+                                {i < 10 ? `0${i}` : i}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs text-muted-foreground">分钟</label>
+                        <Select
+                          value={getCurrentDateTime()?.getMinutes().toString() || "0"}
+                          onValueChange={(value) => {
+                            const date = getCurrentDateTime() || new Date();
+                            date.setMinutes(parseInt(value));
+                            handleDateTimeChange(date);
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="分" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[0, 15, 30, 45].map((minute) => (
+                              <SelectItem key={minute} value={minute.toString()}>
+                                {minute < 10 ? `0${minute}` : minute}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setTaskForm({ ...taskForm, due_date: "" })}
+                      size="sm"
+                    >
+                      清除
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        const date = getCurrentDateTime() || new Date();
+                        // 保存时间选择
+                        setTaskForm({ ...taskForm, due_date: date.toISOString() });
+                        // 关闭日历组件
+                        onOpenChange(false);}} 
+                      size="sm"
+                    >
+                      确定
+                    </Button>
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-base font-medium text-gray-700">任务详情</label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs"
-                  onClick={generateDetailedNotes}
-                  disabled={isAIGenerating}
-                >
-                  <Eye className="mr-2 h-4 w-4" />
-                  AI生成详细笔记
-                </Button>
-              </div>
-              <Textarea
-                value={taskForm.notes}
-                onChange={(e) => handleChange("notes", e.target.value)}
-                placeholder="输入任务详情..."
-                className="min-h-[200px] glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </div>
           </div>
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
-            >
-              取消
-            </Button>
-            <Button 
-              onClick={handleSubmit} 
-              className="btn-primary"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  {task ? "更新中..." : "创建中..."}
-                </>
-              ) : (
-                task ? "更新" : "创建"
-              )}
-            </Button>
-          </DialogFooter>
+          <div>
+            <label className="text-base font-medium text-gray-700">标签</label>
+            <Popover open={openTagSelect} onOpenChange={setOpenTagSelect}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={openTagSelect}
+                  className="mt-2 w-full justify-between glass-morphism border-0 focus:ring-1 focus:ring-ring h-12"
+                >
+                  <span className="flex gap-1 flex-wrap">
+                    {taskForm.tags.length > 0 ? (
+                      taskForm.tags.map(tag => (
+                        <Badge key={tag} variant="secondary" className="mr-1">
+                          {tag}
+                        </Badge>
+                      ))
+                    ) : (
+                      "选择标签..."
+                    )}
+                  </span>
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="搜索标签..." />
+                  <CommandEmpty>未找到标签</CommandEmpty>
+                  <CommandGroup>
+                    {tags.map((tag) => (
+                      <CommandItem
+                        key={tag.id}
+                        onSelect={() => {
+                          const newTags = taskForm.tags.includes(tag.name)
+                            ? taskForm.tags.filter(t => t !== tag.name)
+                            : [...taskForm.tags, tag.name]
+                          setTaskForm({ ...taskForm, tags: newTags })
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            taskForm.tags.includes(tag.name) ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {tag.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-base font-medium text-gray-700">任务详情</label>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs"
+                onClick={generateDetailedNotes}
+                disabled={isAIGenerating}
+              >
+                <Eye className="mr-0 h-4 w-4" />
+              智能分析
+              </Button>
+            </div>
+            <Textarea
+              value={taskForm.notes}
+              onChange={(e) => handleChange("notes", e.target.value)}
+              placeholder="输入任务详情..."
+              className="min-h-[200px] glass-morphism border-0 focus-visible:ring-1 focus-visible:ring-ring"
+            />
+          </div>
         </div>
+
+        <DialogFooter>
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
+            取消
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            className="btn-primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                {task ? "更新中..." : "创建中..."}
+              </>
+            ) : (
+              task ? "更新" : "创建"
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
