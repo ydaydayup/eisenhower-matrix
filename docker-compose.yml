@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: my-custom-nextjs-image:latest
+    image: eisenhower-matrix:latest
     volumes:
       - .env:/app/.env
     ports:
