@@ -19,6 +19,8 @@ import {SubtaskSidebar} from "@/components/SubtaskSidebar"
 import {ButtonGroup, ButtonGroupItem} from "@/components/ui/button-group"
 import TaskEditModal from "@/components/TaskEditModal"
 
+export const dynamic = 'force-dynamic'
+
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
 
