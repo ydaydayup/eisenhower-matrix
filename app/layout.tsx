@@ -1,11 +1,18 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ]
+}
 
 export const metadata: Metadata = {
   title: "AI提效",
@@ -21,11 +28,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: "Todo App"
-  },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
-  ]
+  }
 }
 
 // 在服务器端无法使用usePathname，我们将判断逻辑移到ThemeSwitcher组件中

@@ -1,4 +1,4 @@
-import { createClient } from "./server";
+import { createNextServerClient } from "./server";
 import { cookies } from "next/headers";
 
 /**
@@ -14,7 +14,7 @@ export async function getUserById(userId: string) {
     }
 
     const cookieStore = cookies();
-    const supabase = await createClient();
+    const supabase = await createNextServerClient();
     
     // 使用profiles表获取用户信息，不使用admin API
     const { data: profileData, error: profileError } = await supabase

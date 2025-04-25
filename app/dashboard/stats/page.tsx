@@ -11,6 +11,9 @@ import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, Resp
 import { type Task, getUserTasks } from "@/lib/tasks"
 import { type Note, getUserNotes } from "@/lib/notes"
 
+// 添加动态配置
+export const dynamic = 'force-dynamic'
+
 export default function StatsPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [notes, setNotes] = useState<Note[]>([])

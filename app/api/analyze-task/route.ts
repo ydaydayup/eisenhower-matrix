@@ -37,14 +37,32 @@ export async function POST(request: Request) {
     // 创建流式响应
     const stream = OpenAIStream(response)
     
+    // 将 AsyncGenerator 转换为 ReadableStream
+    const readableStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            controller.enqueue(new TextEncoder().encode(chunk))
+          }
+          controller.close()
+        } catch (error) {
+          controller.error(error)
+        }
+      }
+    })
+
     // 返回流式响应
-    return new Response(stream)
+    return new Response(readableStream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked'
+      }
+    })
 
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate analysis' },
-      { status: 500 }
+      { error: 'Failed to generate analysis',status: 500 },
     )
   }
 } 

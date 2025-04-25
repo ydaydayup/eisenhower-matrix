@@ -1,21 +1,11 @@
 import type React from "react"
 import {Sidebar} from "@/components/sidebar"
 import {redirect} from "next/navigation"
-import {createClient} from "@/lib/supabase/server"
+import {createNextServerClient} from "@/lib/supabase/server"
 import PWAInstallButton from "@/components/pwa-install-button"
-import DevBypassTest from "./dev-bypass-test"
 
-// 检查是否为开发环境
-const isDevelopment = process.env.NODE_ENV === "development"
-// 读取环境变量中的配置，如果未设置则默认为false
-const DEV_BYPASS_AUTH = process.env.NEXT_PUBLIC_DEV_BYPASS_AUTH === "true" ? true : false
-
-// 开发环境下的测试用户
-const DEV_TEST_USER = {
-    id: "dev-test-user-id",
-    name: "开发测试用户",
-    email: "dev@example.com",
-}
+// Mark this route as dynamic since it uses cookies
+export const dynamic = 'force-dynamic'
 
 export default async function DashboardLayout({
                                                   children,
@@ -26,7 +16,7 @@ export default async function DashboardLayout({
 
     try {
         // 生产环境正常流程：使用服务器端 Supabase 客户端
-        const supabase = await createClient()
+        const supabase = await createNextServerClient()
 
         // 获取会话
         const {
