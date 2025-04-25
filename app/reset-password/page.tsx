@@ -12,13 +12,15 @@ import { useToast } from "@/hooks/use-toast"
 import { updatePassword } from "@/lib/auth"
 import { getSupabaseClient } from "@/lib/supabase/client"
 
-export default function ResetPasswordPage() {
+export default async function  ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isValid, setIsValid] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.auth.getSession()
 
   useEffect(() => {
     // Only run on client side
@@ -26,8 +28,7 @@ export default function ResetPasswordPage() {
 
     // 检查URL中是否包含重置密码所需的参数
     const checkSession = async () => {
-      const supabase = getSupabaseClient()
-      const { data, error } = await supabase.auth.getSession()
+
 
       if (error || !data.session) {
         toast({

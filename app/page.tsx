@@ -2,15 +2,16 @@ import { redirect } from "next/navigation"
 import { createNextServerClient } from "@/lib/supabase/server"
 
 export default async function Home() {
+  // 使用服务器端 Supabase 客户端
+  const supabase = await createNextServerClient()
+
+  // 获取会话
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+
   try {
-    // 使用服务器端 Supabase 客户端
-    const supabase = await createNextServerClient()
-
-    // 获取会话
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
     // 根据会话状态重定向
     if (!session) {
       return redirect("/login")
