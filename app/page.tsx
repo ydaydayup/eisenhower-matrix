@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createNextServerClient } from "@/lib/supabase/server"
-
+export const dynamic = 'force-dynamic'
 export default async function Home() {
   // 使用服务器端 Supabase 客户端
   const supabase = await createNextServerClient()

@@ -2,12 +2,23 @@
   "name": "my-v0-project",
   "version": "0.1.0",
   "private": true,
+  "main": "main.js",
+  "description": "Eisenhower Matrix Application",
+  "author": {
+    "name": "Your Name",
+    "email": "your.email@example.com"
+  },
   "scripts": {
     "dev": "next dev",
-    "debug": "NODE_OPTIONS='--inspect'  next dev",
+    "debug": "NODE_OPTIONS='--inspect' next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:ts": "tsc main.ts --outDir dist",
+    "build:all": "pnpm build:ts && pnpm build:next && pnpm build:electron",
+    "build:next": "next build",
+    "build:electron": "electron-builder --win  --config electron-builder.yml",
+    "start:electron": "electron ."
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -68,6 +79,7 @@
     "lucide-react": "^0.454.0",
     "next": "15.1.0",
     "next-auth": "^4.24.5",
+    "next-electron-rsc": "^0.3.0",
     "next-pwa": "^5.6.0",
     "next-themes": "^0.4.4",
     "quill": "^2.0.3",
@@ -89,6 +101,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12",
     "@types/node": "^22.13.14",
     "@types/react": "^19.0.12",
     "@types/react-big-calendar": "^1.16.1",
