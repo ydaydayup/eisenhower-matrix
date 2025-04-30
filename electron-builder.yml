@@ -12,8 +12,11 @@ electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
   cache: ./electron-cache
 win:
-  target: portable
-  icon: build/icon.ico
+  target: nsis
+#     - target: nsis
+#       arch: x64
+#   arch: x64
+#   icon: build/icon.ico
 mac:
   target: dmg
   icon: build/icon.icns

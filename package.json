@@ -17,7 +17,7 @@
     "build:ts": "tsc main.ts --outDir dist",
     "build:all": "pnpm build:ts && pnpm build:next && pnpm build:electron",
     "build:next": "next build",
-    "build:electron": "electron-builder --win  --config electron-builder.yml",
+    "build:electron": "electron-builder --win --config electron-builder.yml",
     "start:electron": "electron ."
   },
   "dependencies": {
