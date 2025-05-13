@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { OpenAIStream } from '@/lib/openai-stream'
-
+export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED TO ENSURE PAGE IS DYNAMIC, NOT PRE-BUILT
 export async function POST(request: Request) {
   try {
     const { title } = await request.json()

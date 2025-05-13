@@ -1,59 +1,95 @@
-import { app, BrowserWindow, protocol } from 'electron';
+console.log("==========================================")
+import path from 'path';
+import { app, BrowserWindow, Menu, protocol, session, shell } from 'electron';
 import { createHandler } from 'next-electron-rsc';
-import path from 'node:path';
-import { fileURLToPath } from 'url';
+console.log("==========================================")
+// Register protocols before app is ready
+// protocol.registerSchemesAsPrivileged([
+//     {
+//         scheme: 'app',
+//         privileges: {
+//             standard: true,
+//             secure: true,
+//             supportFetchAPI: true,
+//             bypassCSP: true
+//         }
+//     }
+// ]);
+//
+// protocol.registerSchemesAsPrivileged([
+//     {
+//         scheme: 'http',
+//         privileges: {
+//             standard: true,
+//             secure: true,
+//             supportFetchAPI: true,
+//             bypassCSP: true
+//         },
+//     },
+// ]);
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let mainWindow;
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
 
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
+
+
+// ⬇ Next.js handler ⬇
+
+// change to your path, make sure it's added to Electron Builder files
 const appPath = app.getAppPath();
-const isDev = process.env.NODE_ENV === 'development';
+const dev = process.env.NODE_ENV === 'development';
+const dir = path.join(appPath, '.next', 'standalone');
 
-const { createInterceptor } = createHandler({
-    standaloneDir: path.join(appPath, '.next', 'standalone'),
-    localhostUrl: 'http://localhost:3000',
+const { createInterceptor, localhostUrl } = createHandler({
+    dev,
+    dir,
     protocol,
+    debug: true,
+    // ... and other Nex.js server options https://nextjs.org/docs/pages/building-your-application/configuring/custom-server
+    turbo: true, // optional
 });
 
-function createWindow() {
-    // 创建浏览器窗口
-    const mainWindow = new BrowserWindow({
-        width: 1200,
+let stopIntercept;
+
+// ⬆ Next.js handler ⬆
+
+const createWindow = async () => {
+    mainWindow = new BrowserWindow({
+        width: 1600,
         height: 800,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
-        }
+            contextIsolation: true, // protect against prototype pollution
+            devTools: true,
+        },
     });
 
-    // 在开发环境中加载 localhost URL，在生产环境中加载本地文件
-    const startUrl = isDev 
-        ? 'http://localhost:3000' 
-        : 'app://localhost';
+    // ⬇ Next.js handler ⬇
 
-    mainWindow.loadURL(startUrl);
+    stopIntercept = await createInterceptor({ session: mainWindow.webContents.session });
 
-    // 在开发环境下打开开发者工具
-    if (isDev) {
-        mainWindow.webContents.openDevTools();
-    }
+    // ⬆ Next.js handler ⬆
 
-    // 正确调用 createInterceptor，传入 session
-    if (!isDev) {
-        createInterceptor({ session: mainWindow.webContents.session });
-    }
-}
+    mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
 
-// Electron 应用准备就绪时创建窗口
-app.whenReady().then(() => {
-    createWindow();
-
-    app.on('activate', function () {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+        stopIntercept?.();
     });
-});
 
-// 当所有窗口关闭时退出应用
-app.on('window-all-closed', function () {
-    if (process.platform !== 'darwin') app.quit();
-});
+    // Should be last, after all listeners and menu
+
+    await app.whenReady();
+
+    await mainWindow.loadURL(localhostUrl + '/');
+
+    console.log('[APP] Loaded', localhostUrl);
+};
+
+app.on('ready', createWindow);
+
+app.on('window-all-closed', () => app.quit()); // if (process.platform !== 'darwin')
+
+app.on('activate', () => BrowserWindow.getAllWindows().length === 0 && !mainWindow && createWindow());

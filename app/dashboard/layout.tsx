@@ -4,24 +4,24 @@ import {redirect} from "next/navigation"
 import {createNextServerClient} from "@/lib/supabase/server"
 import PWAInstallButton from "@/components/pwa-install-button"
 
-// Mark this route as dynamic since it uses cookies
-export const dynamic = 'force-dynamic'
+
 
 export default async function DashboardLayout({
                                                   children,
                                               }: {
     children: React.ReactNode
 }) {
+    // 生产环境正常流程：使用服务器端 Supabase 客户端
+    const supabase = await createNextServerClient()
+
+    // 获取会话
+    const {
+        data: {session},
+    } = await supabase.auth.getSession()
 
 
     try {
-        // 生产环境正常流程：使用服务器端 Supabase 客户端
-        const supabase = await createNextServerClient()
 
-        // 获取会话
-        const {
-            data: {session},
-        } = await supabase.auth.getSession()
 
         // 如果没有会话，重定向到登录页面
         if (!session) {
