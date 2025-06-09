@@ -300,7 +300,7 @@
   
   /* 标签页主题适配 */
   .tab-theme {
-    @apply hover:bg-secondary data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground;
+    @apply hover:bg-secondary data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground transition-all duration-200 ease-linear transform-gpu translate-y-0;
   }
   
   /* 下拉菜单主题适配 */

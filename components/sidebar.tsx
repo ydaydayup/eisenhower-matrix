@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight, Palette, GripVertical } from "lucide-react"
+import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight, Palette, GripVertical, Pin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -18,6 +18,25 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities';
 import dynamic from "next/dynamic"
 import React from "react"
+import { useClient } from "@/lib/hooks/use-client"
+import { usePinWindow } from "@/lib/hooks/use-pin-window"
+import PinWindowButton from "@/components/PinWindowButton"
+
+// 添加Electron类型定义
+declare global {
+  interface Window {
+    electron?: {
+      send: (channel: string, ...args: any[]) => void;
+      receive: (channel: string, func: (...args: any[]) => void) => void;
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
+      showNotification: (options: any) => void;
+      togglePinWindow: () => void;
+      setPinStatus: (isPinned: boolean) => void;
+      isWindowPinned: () => Promise<boolean>;
+      test?: () => string;
+    };
+  }
+}
 
 interface SidebarProps {
   user: { id: string; name: string; email: string } | null
@@ -35,7 +54,8 @@ const IconMap = {
   ChevronLeft,
   ChevronRight,
   Palette,
-  GripVertical
+  GripVertical,
+  Pin
 };
 
 // 定义侧边栏项目类型
@@ -108,7 +128,12 @@ const SortableItemComponent = ({
           )}
         >
           <IconComponent className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
-          {!isCollapsed && <span>{item.title}</span>}
+          <span className={cn(
+            "transition-opacity duration-300 ease-in-out whitespace-nowrap",
+            isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+          )}>
+            {item.title}
+          </span>
         </Button>
       </Link>
     </div>
@@ -130,6 +155,19 @@ export function Sidebar({ user }: SidebarProps) {
   const { isPanelOpen, setIsPanelOpen } = useTheme()
   const [clientReady, setClientReady] = useState(false) // 添加客户端就绪状态
   const [userIntentionalNavigation, setUserIntentionalNavigation] = useState(false)
+  // 检测是否在Electron环境
+  const isClient = useClient()
+  const isElectron = isClient && typeof window !== 'undefined' && !!window.electron
+  // 引入窗口置顶功能
+  const { isPinned, lastUpdate, togglePin, refreshStatus, isAvailable, setPinStatus } = usePinWindow()
+  
+  // 组件挂载时和窗口获得焦点时刷新状态
+  useEffect(() => {
+    // 组件挂载时请求一次状态
+    if (isElectron && isAvailable) {
+      refreshStatus();
+    }
+  }, [isElectron, isAvailable, refreshStatus]);
   
   // 主题按钮引用
   const themeButtonRef = useRef<HTMLButtonElement>(null)
@@ -320,7 +358,12 @@ export function Sidebar({ user }: SidebarProps) {
               const Icon = IconMap[item.icon] || IconMap.StickyNote;
               return <Icon className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />;
             })()}
-            {!isCollapsed && <span>{item.title}</span>}
+            <span className={cn(
+              "transition-opacity duration-300 ease-in-out whitespace-nowrap",
+              isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+            )}>
+              {item.title}
+            </span>
           </Button>
         </Link>
       </div>
@@ -377,6 +420,9 @@ export function Sidebar({ user }: SidebarProps) {
         </div>
 
         <div className="mt-auto px-2 py-3 md:px-3 md:py-4 space-y-2">
+          {/* 钉在桌面按钮 - 仅在Electron环境显示 */}
+          {renderPinButton()}
+          
           {/* 主题设置按钮 */}
           <Button
             ref={themeButtonRef}
@@ -388,7 +434,12 @@ export function Sidebar({ user }: SidebarProps) {
             }}
           >
             <Palette className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
-            {!isCollapsed && <span>主题设置</span>}
+            <span className={cn(
+              "transition-opacity duration-300 ease-in-out whitespace-nowrap",
+              isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+            )}>
+              主题设置
+            </span>
           </Button>
           
           <Button
@@ -397,7 +448,12 @@ export function Sidebar({ user }: SidebarProps) {
             onClick={handleLogout}
           >
             <LogOut className={cn("h-4 w-4", isCollapsed ? "mr-0" : "mr-2")} />
-            {!isCollapsed && <span>退出登录</span>}
+            <span className={cn(
+              "transition-opacity duration-300 ease-in-out whitespace-nowrap",
+              isCollapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"
+            )}>
+              退出登录
+            </span>
           </Button>
         </div>
       </div>
@@ -603,6 +659,20 @@ export function Sidebar({ user }: SidebarProps) {
     }
   };
 
+  // 渲染钉在桌面按钮
+  const renderPinButton = () => {
+    // 确保环境条件满足
+    if (!isElectron || !isAvailable) return null;
+    
+    return (
+      <PinWindowButton
+        variant="outline"
+        className={cn("w-full justify-start text-sm", isCollapsed ? "px-2" : "")}
+        isCollapsed={isCollapsed}
+      />
+    );
+  };
+
   // 移动端侧边栏
   if (isMobile) {
     return (
@@ -647,7 +717,7 @@ export function Sidebar({ user }: SidebarProps) {
             }
           }}
           className={cn(
-            "flex flex-col h-full bg-card shadow-md border-r border-border transition-all duration-300",
+            "flex flex-col h-full bg-card shadow-md border-r border-border transition-all duration-300 ease-in-out",
             isCollapsed ? "w-[60px]" : "w-[230px]"
           )}
         >

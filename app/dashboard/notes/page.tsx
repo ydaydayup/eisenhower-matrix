@@ -33,12 +33,17 @@ export default function NotesPage() {
   useEffect(() => {
     const checkSession = async () => {
       try {
+        console.log("Checking user session...")
         const session = await getUserSession()
+        console.log("Session result:", session ? "Found" : "Not found")
+        
         if (!session) {
+          console.log("No session found, redirecting to login")
           router.push("/login")
           return
         }
 
+        console.log("User session found:", session.id)
         setUser(session)
         loadUserNotes(session.id)
       } catch (error) {
@@ -54,8 +59,20 @@ export default function NotesPage() {
 
   // 加载用户备忘录
   const loadUserNotes = async (userId: string) => {
+    if (!userId) {
+      console.error("Cannot load notes: userId is empty")
+      toast({
+        title: "加载失败",
+        description: "用户ID无效，请重新登录",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
+      console.log("Loading notes for user:", userId)
       const userNotes = await getUserNotes(userId)
+      console.log(`Loaded ${userNotes.length} notes`)
       setNotes(userNotes)
     } catch (error) {
       console.error("Error loading notes:", error)
@@ -76,6 +93,8 @@ export default function NotesPage() {
         user_id: user.id,
         title: noteForm.title,
         content: noteForm.content,
+        tags: [],
+        quadrant: null
       }
 
       const createdNote = await createNote(newNoteData)
@@ -188,7 +207,7 @@ export default function NotesPage() {
   return (
     <main className="container mx-auto p-4 max-w-6xl">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 my-4 sm:my-6">
-        <h1 className="text-xl sm:text-2xl font-bold">备忘录</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">随手记</h1>
         <Button
           onClick={() => {
             resetNoteForm()

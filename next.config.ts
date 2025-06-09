@@ -33,12 +33,34 @@ const nextConfig: NextConfig = {
         webpackBuildWorker: true,
         parallelServerBuildTraces: true,
         parallelServerCompiles: true,
+        optimizeCss: true,
+        optimizePackageImports: ['lucide-react', 'recharts', '@radix-ui/react-*'],
+        scrollRestoration: true,
     },
+    poweredByHeader: false,
+    compress: true,
     outputFileTracingIncludes: {
         '*': [
             'public/**/*',
             '.next/static/**/*',
         ],
+    },
+    webpack: (config, { isServer }) => {
+        config.cache = true;
+        
+        if (!isServer && typeof config.optimization.splitChunks === 'object') {
+            config.optimization.splitChunks.cacheGroups = {
+                ...config.optimization.splitChunks.cacheGroups,
+                styles: {
+                    name: 'styles',
+                    test: /\.(css|scss)$/,
+                    chunks: 'all',
+                    enforce: true,
+                },
+            };
+        }
+
+        return config;
     },
     serverExternalPackages: ['electron'], // to prevent bundling Electron
 }

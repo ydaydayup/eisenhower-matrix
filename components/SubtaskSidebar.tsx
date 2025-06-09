@@ -153,7 +153,7 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
             </div>
           </div>
 
-          <div className="mt-4 md:mt-6">
+          <div>
             <h3 className="font-medium mb-3 text-sm md:text-base text-foreground">子任务列表</h3>
             {isLoading ? (
               <div className="flex items-center justify-center py-6">
@@ -187,7 +187,7 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
                       <span className={cn("text-sm break-words px-1 py-2 flex-1", subtask.completed && "line-through text-muted-foreground")}>
                         {subtask.title}
                       </span>
-                      <Button 
+                      <Button
                         variant="ghost" 
                         size="icon" 
                         className="h-7 w-7 rounded-full hover:bg-background/70 opacity-20 group-hover:opacity-100 transition-all duration-200" 

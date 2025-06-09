@@ -1,9 +1,9 @@
 "use client"
 
-import { getSupabaseClient } from "./supabase/client"
+import { getSupabaseClient, supabase } from "./supabase/client"
 
 // 定义子任务类型
-export type Subtask = {
+export interface Subtask {
   id: string
   task_id: string
   title: string
@@ -13,9 +13,9 @@ export type Subtask = {
 
 // 获取任务的所有子任务
 export const getTaskSubtasks = async (taskId: string): Promise<Subtask[]> => {
-  const supabase = getSupabaseClient()
+  const client = supabase || await getSupabaseClient()
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("subtasks")
     .select("*")
     .eq("task_id", taskId)
@@ -31,9 +31,9 @@ export const getTaskSubtasks = async (taskId: string): Promise<Subtask[]> => {
 
 // 创建新子任务
 export const createSubtask = async (subtask: Omit<Subtask, "id" | "created_at">): Promise<Subtask | null> => {
-  const supabase = getSupabaseClient()
+  const client = supabase || await getSupabaseClient()
 
-  const { data, error } = await supabase.from("subtasks").insert([subtask]).select().single()
+  const { data, error } = await client.from("subtasks").insert([subtask]).select().single()
 
   if (error) {
     console.error("Error creating subtask:", error)
@@ -45,9 +45,9 @@ export const createSubtask = async (subtask: Omit<Subtask, "id" | "created_at">)
 
 // 更新子任务
 export const updateSubtask = async (id: string, updates: Partial<Subtask>): Promise<Subtask | null> => {
-  const supabase = getSupabaseClient()
+  const client = supabase || await getSupabaseClient()
 
-  const { data, error } = await supabase.from("subtasks").update(updates).eq("id", id).select().single()
+  const { data, error } = await client.from("subtasks").update(updates).eq("id", id).select().single()
 
   if (error) {
     console.error("Error updating subtask:", error)
@@ -59,9 +59,9 @@ export const updateSubtask = async (id: string, updates: Partial<Subtask>): Prom
 
 // 删除子任务
 export const deleteSubtask = async (id: string): Promise<boolean> => {
-  const supabase = getSupabaseClient()
+  const client = supabase || await getSupabaseClient()
 
-  const { error } = await supabase.from("subtasks").delete().eq("id", id)
+  const { error } = await client.from("subtasks").delete().eq("id", id)
 
   if (error) {
     console.error("Error deleting subtask:", error)

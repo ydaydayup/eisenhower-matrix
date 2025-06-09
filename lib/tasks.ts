@@ -1,6 +1,6 @@
 "use client"
 
-import { getSupabaseClient } from "./supabase/client"
+import { getSupabaseClient, supabase } from "./supabase/client"
 
 // 定义任务类型
 export interface Task {
@@ -17,9 +17,10 @@ export interface Task {
 
 // 获取用户的所有任务
 export const getUserTasks = async (userId: string): Promise<Task[]> => {
-  const supabase = getSupabaseClient()
+  // 优先使用直接可用的客户端，如果不可用则等待异步客户端
+  const client = supabase || await getSupabaseClient()
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("tasks")
     .select("*")
     .eq("user_id", userId)
@@ -35,7 +36,8 @@ export const getUserTasks = async (userId: string): Promise<Task[]> => {
 
 // 创建新任务
 export const createTask = async (task: Omit<Task, "id" | "created_at">): Promise<Task | null> => {
-  const supabase = getSupabaseClient()
+  // 优先使用直接可用的客户端，如果不可用则等待异步客户端
+  const client = supabase || await getSupabaseClient()
 
   // 确保日期时间格式正确
   const taskWithFormattedDate = {
@@ -43,7 +45,7 @@ export const createTask = async (task: Omit<Task, "id" | "created_at">): Promise
     due_date: task.due_date ? formatDateTimeForDB(task.due_date) : null
   }
 
-  const { data, error } = await supabase.from("tasks").insert([taskWithFormattedDate]).select().single()
+  const { data, error } = await client.from("tasks").insert([taskWithFormattedDate]).select().single()
 
   if (error) {
     console.error("Error creating task:", error)
@@ -55,7 +57,8 @@ export const createTask = async (task: Omit<Task, "id" | "created_at">): Promise
 
 // 更新任务
 export const updateTask = async (id: string, updates: Partial<Task>): Promise<Task | null> => {
-  const supabase = getSupabaseClient()
+  // 优先使用直接可用的客户端，如果不可用则等待异步客户端
+  const client = supabase || await getSupabaseClient()
 
   // 处理日期时间格式
   const updatesWithFormattedDate = {
@@ -65,7 +68,7 @@ export const updateTask = async (id: string, updates: Partial<Task>): Promise<Ta
 
   console.log("提交到数据库的日期时间:", updatesWithFormattedDate.due_date)
 
-  const { data, error } = await supabase.from("tasks").update(updatesWithFormattedDate).eq("id", id).select().single()
+  const { data, error } = await client.from("tasks").update(updatesWithFormattedDate).eq("id", id).select().single()
 
   if (error) {
     console.error("Error updating task:", error)
@@ -78,9 +81,10 @@ export const updateTask = async (id: string, updates: Partial<Task>): Promise<Ta
 
 // 删除任务
 export const deleteTask = async (id: string): Promise<boolean> => {
-  const supabase = getSupabaseClient()
+  // 优先使用直接可用的客户端，如果不可用则等待异步客户端
+  const client = supabase || await getSupabaseClient()
 
-  const { error } = await supabase.from("tasks").delete().eq("id", id)
+  const { error } = await client.from("tasks").delete().eq("id", id)
 
   if (error) {
     console.error("Error deleting task:", error)

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>待办事项</title>
+  <link rel="stylesheet" href="./floating-todo.css">
+  <script>
+    // 防止拖动导致新窗口打开
+    document.addEventListener('dragover', (e) => e.preventDefault());
+    document.addEventListener('drop', (e) => e.preventDefault());
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="./floating-todo.js"></script>
+</body>
+</html> 
