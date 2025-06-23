@@ -2,7 +2,7 @@
   "name": "ai-efficiency",
   "version": "0.1.0",
   "private": true,
-  "main": "main.cjs",
+  "main": "main.js",
   "description": "AI提效工具应用",
   "author": {
     "name": "Your Name",

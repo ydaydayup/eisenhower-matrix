@@ -1,21 +1,34 @@
-appId: com.ai.efficiency
-productName: AI提效
+appId: com.eisenhower.matrix
+productName: Eisenhower Matrix
 files:
   - main.js
-  - package.json
-  - preload/**/*
-  - public/icons/**/*
   - from: '.next/standalone/'
     to: '.next/standalone/'
-asar: true
+asar: false
 directories:
   output: dist
-  buildResources: public/icons
+  buildResources: build
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
   cache: ./electron-cache
 win:
   target: nsis
-#   icon: "icon-512x512.png"
-
-
+#     - target: nsis
+#       arch: x64
+#   arch: x64
+#   icon: build/icon.ico
+mac:
+  target: dmg
+  icon: build/icon.icns
+linux:
+  target: AppImage
+  icon: build/icon.png
+  category: Utility
+  maintainer: "Your Name <your.email@example.com>"
+  artifactName: "${productName}-${version}.${ext}"
+  desktop:
+    entry:
+      Name: "Eisenhower Matrix"
+      Comment: "Task management application"
+      Type: "Application"
+      Categories: "Utility;"
