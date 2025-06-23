@@ -2,29 +2,12 @@ appId: com.ai.efficiency
 productName: AI提效
 files:
   - main.js
-  - main.cjs
   - package.json
   - preload/**/*
   - public/icons/**/*
   - from: '.next/standalone/'
     to: '.next/standalone/'
-  - from: 'node_modules/next-electron-rsc/'
-    to: 'node_modules/next-electron-rsc/'
-  - from: 'node_modules/electron-serve/'
-    to: 'node_modules/electron-serve/'
-  - "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}"
-  - "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}"
-  - "!**/node_modules/*/{.git,.github,.vscode,docs,doc,website}"
-  - "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}"
-  - "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,__pycache__,thumbs.db,.gitignore,.gitattributes}"
-  - "!**/node_modules/!(next-electron-rsc|electron-serve)/**/{test,__tests__,tests,powered-test,example,examples}"
-extraResources:
-  - from: "node_modules/next-electron-rsc/"
-    to: "app/node_modules/next-electron-rsc/"
 asar: true
-asarUnpack:
-  - "node_modules/next-electron-rsc/**/*"
-compression: maximum
 directories:
   output: dist
   buildResources: public/icons
@@ -33,23 +16,6 @@ electronDownload:
   cache: ./electron-cache
 win:
   target: nsis
-  icon: "icon-512x512.png"
-#     - target: nsis
-#       arch: x64
-#   arch: x64
-#   icon: build/icon.ico
-mac:
-  target: dmg
-  icon: "icon.png"
-linux:
-  target: AppImage
-  icon: "icon-512x512.png"
-  category: Utility
-  maintainer: "Your Name <your.email@example.com>"
-  artifactName: "${productName}-${version}.${ext}"
-  desktop:
-    entry:
-      Name: "AI提效"
-      Comment: "AI效率提升工具"
-      Type: "Application"
-      Categories: "Utility;"
+#   icon: "icon-512x512.png"
+
+
