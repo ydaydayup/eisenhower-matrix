@@ -86,7 +86,7 @@ const createWindow = async () => {
             nodeIntegration: false, // 禁用Node集成，增强安全性
         },
     });
-
+    mainWindow.webContents.openDevTools();
     // 隐藏菜单栏
     mainWindow.setMenuBarVisibility(false);
 
