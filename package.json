@@ -2,7 +2,7 @@
   "name": "ai-efficiency",
   "version": "0.1.0",
   "private": true,
-  "main": "main.cjs",
+  "main": "main.js",
   "description": "AI提效工具应用",
   "author": {
     "name": "Your Name",
@@ -80,7 +80,7 @@
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
-    "next": "15.1.0",
+    "next": "^15.3.4",
     "next-auth": "^4.24.5",
     "next-electron-rsc": "^0.3.0",
     "next-pwa": "^5.6.0",

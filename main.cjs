@@ -38,6 +38,7 @@ process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
 
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
+const port= 55535;
 
 // 安全地导入可能缺失的模块
 let createHandler;

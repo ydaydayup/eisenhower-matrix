@@ -21,7 +21,7 @@ files:
 extraResources:
   - from: "node_modules/next-electron-rsc/"
     to: "app/node_modules/next-electron-rsc/"
-asar: true
+asar: false
 asarUnpack:
   - "node_modules/next-electron-rsc/**/*"
 compression: maximum
