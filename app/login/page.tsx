@@ -12,17 +12,31 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Eye, EyeOff } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [supabaseClient, setSupabaseClient] = useState<any>(null)
   const router = useRouter()
   const { toast } = useToast()
-  
+  const [showPassword, setShowPassword] = useState(false)
+  // 尝试恢复保存的邮箱账号
+  const loadRememberedEmail = async () => {
+    try {
+      const rememberedEmail = await localStorage.getItem('auth:rememberedEmail');
+      if (rememberedEmail) {
+        console.log("填充保存的账号:", rememberedEmail);
+        setEmail(rememberedEmail);
+      }
+    } catch (err) {
+      console.error("无法加载保存的账号:", err);
+    }
+  };
+
   // 初始化 Supabase 客户端
   useEffect(() => {
     const initSupabase = async () => {
@@ -35,30 +49,28 @@ export default function LoginPage() {
       }
     };
     
-    initSupabase();
-    
-    // 尝试恢复保存的邮箱账号
-    const loadRememberedEmail = async () => {
-      if (typeof window !== 'undefined' && window.electron) {
-        // 确保store API可用
-        if (!window.electron.store) {
-          console.error("Electron store API不可用，无法加载保存的账号");
-          return;
-        }
-        
-        try {
-          const rememberedEmail = await window.electron.store.get('auth:rememberedEmail');
-          if (rememberedEmail) {
-            console.log("填充保存的账号:", rememberedEmail);
-            setEmail(rememberedEmail);
+    // 自动填充账号和密码
+    const loadRememberedCredentials = async () => {
+      try {
+        const credentialsStr = localStorage.getItem('auth:credentials');
+        if (credentialsStr) {
+          const credentials = JSON.parse(credentialsStr);
+          if (credentials.expiresAt > Date.now()) {
+            setEmail(credentials.email);
+            setPassword(atob(credentials.password));
+            setRememberMe(true);
+          } else {
+            // 过期则清除
+            localStorage.removeItem('auth:credentials');
           }
-        } catch (err) {
-          console.error("无法加载保存的账号:", err);
         }
+      } catch (err) {
+        console.error("无法加载保存的账号密码:", err);
       }
     };
-    
-    loadRememberedEmail();
+
+    initSupabase();
+    loadRememberedCredentials();
   }, []);
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,63 +107,21 @@ export default function LoginPage() {
       }
       
       if (data.user) {
-        // 如果在 Electron 环境中，额外保存会话到持久化存储
-        if (typeof window !== 'undefined' && 
-            window.electron && 
-            rememberMe) {
-            
-          // 确保store API可用
-          if (!window.electron.store) {
-            console.error("Electron store API不可用，使用localStorage作为备用存储");
-            // 使用浏览器本地存储作为降级方案
-            try {
-              // 保存email到localStorage
-              localStorage.setItem('auth:rememberedEmail', email);
-              // 简单加密密码（实际应用中应使用更安全的加密）
-              localStorage.setItem('auth:credentials', JSON.stringify({
-                email,
-                password: btoa(password),
-                expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30天
-              }));
-            } catch (err) {
-              console.warn("无法使用localStorage作为备用存储:", err);
-            }
+        try {
+          localStorage.setItem('auth:rememberedEmail', email);
+          if (rememberMe) {
+            localStorage.setItem('auth:credentials', JSON.stringify({
+              email,
+              password: btoa(password),
+              expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000) // 30天
+            }));
           } else {
-            try {
-              // 获取完整的会话对象
-              const { data: sessionData } = await supabaseClient.auth.getSession();
-              
-              if (sessionData && sessionData.session) {
-                console.log("保存会话，用户:", data.user.email);
-                
-                // 手动从localStorage获取会话token
-                const localStorageAuth = localStorage.getItem('supabase.auth.token');
-                if (localStorageAuth) {
-                  // 保存到electron store
-                  window.electron.store.set('auth:supabase.auth.token', localStorageAuth);
-                  console.log("会话token已保存到store");
-                } else {
-                  console.log("警告: 无法从localStorage获取会话token");
-                }
-                
-                // 计算过期时间：30天后
-                const thirtyDaysInMs = 30 * 24 * 60 * 60 * 1000;
-                const expiresAt = Date.now() + thirtyDaysInMs;
-                
-                // 直接保存凭据到store (包括加密密码)
-                window.electron.store.set('auth:credentials', {
-                  email,
-                  password: btoa(password), // 简单编码密码，实际应用中应使用更安全的加密
-                  expiresAt
-                });
-                console.log("用户凭据已保存，有效期30天");
-              }
-            } catch (err) {
-              console.warn("无法保存会话到 Electron 存储:", err);
-            }
+            localStorage.removeItem('auth:credentials');
           }
+        } catch (err) {
+          console.warn("无法使用localStorage作为备用存储:", err);
         }
-        
+
         toast({
           title: "登录成功",
           description: "欢迎回来！",
@@ -207,13 +177,25 @@ export default function LoginPage() {
                     忘记密码?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    autoComplete="on"
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? "隐藏密码" : "显示密码"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox 
