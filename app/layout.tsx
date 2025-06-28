@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
+import { AutoLoginProvider } from "@/components/auto-login-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: "Todo App"
+    title: "AI提效"
   }
 }
 
@@ -45,8 +46,8 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Todo App" />
-        <meta name="application-name" content="Todo App" />
+        <meta name="apple-mobile-web-app-title" content="AI提效" />
+        <meta name="application-name" content="AI提效" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
@@ -58,9 +59,11 @@ export default function RootLayout({
         
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <Toaster />
-          <main className="relative z-10">
-            {children}
-          </main>
+          <AutoLoginProvider>
+            <main className="relative z-10">
+              {children}
+            </main>
+          </AutoLoginProvider>
         </ThemeProvider>
       </body>
     </html>

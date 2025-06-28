@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { createTask, updateTask } from "@/lib/tasks"
 import { Calendar } from "@/components/ui/calendar"
+import { useNotification } from "@/lib/hooks/use-notification"
 
 interface TaskEditModalProps {
   open: boolean
@@ -42,6 +43,8 @@ export default function TaskEditModal({
   const [isAIGenerating, setIsAIGenerating] = useState(false)
   const [openTagSelect, setOpenTagSelect] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { scheduleTaskReminder, isElectronAvailable } = useNotification()
+  const [datePickerOpen, setDatePickerOpen] = useState(false)
 
   const [taskForm, setTaskForm] = useState({
     title: "",
@@ -207,6 +210,19 @@ export default function TaskEditModal({
           title: `${task ? '更新' : '创建'}成功`,
           description: `任务已${task ? '更新' : '创建'}成功`,
         })
+        
+        // 如果设置了预计完成时间，创建提醒
+        if (taskData.due_date) {
+          try {
+            // 设置提醒
+            scheduleTaskReminder(taskData.title, {
+              estimatedTime: new Date(taskData.due_date)
+            });
+          } catch (err) {
+            console.error("设置任务提醒失败:", err);
+          }
+        }
+        
         onSuccess(result)
         onOpenChange(false)
       }
@@ -294,7 +310,7 @@ export default function TaskEditModal({
 
             <div>
               <label className="text-base font-medium text-gray-700">预计完成时间</label>
-              <Popover>
+              <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -376,9 +392,9 @@ export default function TaskEditModal({
                             <SelectValue placeholder="分" />
                           </SelectTrigger>
                           <SelectContent>
-                            {[0, 15, 30, 45].map((minute) => (
-                              <SelectItem key={minute} value={minute.toString()}>
-                                {minute < 10 ? `0${minute}` : minute}
+                            {Array.from({length: 60}, (_, i) => (
+                              <SelectItem key={i} value={i.toString()}>
+                                {i < 10 ? `0${i}` : i}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -390,7 +406,10 @@ export default function TaskEditModal({
                   <div className="p-3 flex justify-between">
                     <Button 
                       variant="outline" 
-                      onClick={() => setTaskForm({ ...taskForm, due_date: "" })}
+                      onClick={() => {
+                        setTaskForm({ ...taskForm, due_date: "" });
+                        setDatePickerOpen(false);
+                      }}
                       size="sm"
                     >
                       清除
@@ -400,8 +419,9 @@ export default function TaskEditModal({
                         const date = getCurrentDateTime() || new Date();
                         // 保存时间选择
                         setTaskForm({ ...taskForm, due_date: date.toISOString() });
-                        // 关闭日历组件
-                        onOpenChange(false);}} 
+                        // 正确关闭日期选择器
+                        setDatePickerOpen(false);
+                      }} 
                       size="sm"
                     >
                       确定

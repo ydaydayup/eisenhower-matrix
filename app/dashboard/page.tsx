@@ -1,7 +1,7 @@
 "use client"
 
 import {useState, useEffect, JSX} from "react"
-import {PlusCircle, Edit, Trash2, Check, LucideTag, ListTree, Loader2} from "lucide-react"
+import {PlusCircle, Edit, Trash2, Check, LucideTag, ListTree, Loader2, Pin} from "lucide-react"
 import {Input} from "@/components/ui/input"
 import {Button} from "@/components/ui/button"
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger} from "@/components/ui/dialog"
@@ -18,6 +18,17 @@ import {format} from "date-fns"
 import {SubtaskSidebar} from "@/components/SubtaskSidebar"
 import {ButtonGroup, ButtonGroupItem} from "@/components/ui/button-group"
 import TaskEditModal from "@/components/TaskEditModal"
+import { usePinWindow } from "@/lib/hooks/use-pin-window"
+
+// 定义 Electron 接口
+declare global {
+    interface Window {
+        electron?: {
+            send: (channel: string, ...args: any[]) => void;
+            receive: (channel: string, func: (...args: any[]) => void) => void;
+        };
+    }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +45,8 @@ export default function Dashboard() {
     // 添加生成笔记的加载状态
     const [isGeneratingNotes, setIsGeneratingNotes] = useState(false)
     const [showCompleted, setShowCompleted] = useState(false)
+    // 使用统一的usePinWindow hook
+    const { isPinned, togglePin, error, isAvailable } = usePinWindow()
 
     const router = useRouter()
     const {toast} = useToast()
@@ -216,12 +229,12 @@ export default function Dashboard() {
             setEditingTask({
                 ...editingTask,
                 tags: editingTask.tags.filter((t) => t !== tagName),
-            })
-        } else {
+            } as Task);
+        } else if (editingTask) {
             setEditingTask({
                 ...editingTask,
                 tags: [...editingTask.tags, tagName],
-            })
+            } as Task);
         }
     }
 

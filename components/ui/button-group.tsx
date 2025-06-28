@@ -109,12 +109,12 @@ const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps
       <button
         ref={ref}
         className={cn(
-          "flex items-center justify-center whitespace-nowrap font-medium transition-all focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50",
+          "flex items-center justify-center whitespace-nowrap font-medium transition-all duration-200 ease-linear focus-visible:outline-none focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50",
           // Variant styles
           variant === "default" && "border-r last:border-r-0 hover:bg-accent",
           variant === "outline" && "border-r last:border-r-0 hover:bg-accent",
-          variant === "glass" && "rounded-full",
-          variant === "pill" && "rounded-full",
+          variant === "glass" && "rounded-full transform-gpu translate-y-0",
+          variant === "pill" && "rounded-full transform-gpu translate-y-0",
           // Active state
           variant === "default" && isActive && "bg-accent text-accent-foreground",
           variant === "outline" && isActive && "bg-accent text-accent-foreground",

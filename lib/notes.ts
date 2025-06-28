@@ -1,40 +1,58 @@
 "use client"
 
-import { getSupabaseClient } from "./supabase/client"
+import { getSupabaseClient, supabase } from "./supabase/client"
 
-// 定义备忘录类型
-export type Note = {
+// 定义笔记类型
+export interface Note {
   id: string
   user_id: string
   title: string
   content: string
+  tags: string[]
+  quadrant: 1 | 2 | 3 | 4 | null
   created_at: string
   updated_at: string
+  is_pinned?: boolean
 }
 
-// 获取用户的所有备忘录
+// 获取用户的所有笔记
 export const getUserNotes = async (userId: string): Promise<Note[]> => {
-  const supabase = getSupabaseClient()
+  try {
+    if (!userId) {
+      console.error("Error fetching notes: userId is empty")
+      return []
+    }
 
-  const { data, error } = await supabase
-    .from("notes")
-    .select("*")
-    .eq("user_id", userId)
-    .order("updated_at", { ascending: false })
+    const client = supabase || await getSupabaseClient()
+    
+    if (!client) {
+      console.error("Error fetching notes: Supabase client is null")
+      return []
+    }
 
-  if (error) {
-    console.error("Error fetching notes:", error)
+    const { data, error } = await client
+      .from("notes")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching notes:", error)
+      return []
+    }
+
+    return data || []
+  } catch (err) {
+    console.error("Exception in getUserNotes:", err)
     return []
   }
-
-  return data || []
 }
 
-// 创建新备忘录
+// 创建新笔记
 export const createNote = async (note: Omit<Note, "id" | "created_at" | "updated_at">): Promise<Note | null> => {
-  const supabase = getSupabaseClient()
+  const client = supabase || await getSupabaseClient()
 
-  const { data, error } = await supabase.from("notes").insert([note]).select().single()
+  const { data, error } = await client.from("notes").insert([note]).select().single()
 
   if (error) {
     console.error("Error creating note:", error)
@@ -44,58 +62,36 @@ export const createNote = async (note: Omit<Note, "id" | "created_at" | "updated
   return data
 }
 
-// 更新备忘录
-export const updateNote = async (
-  id: string,
-  updates: Partial<Omit<Note, "id" | "created_at" | "updated_at">>,
-): Promise<Note | null> => {
-  const supabase = getSupabaseClient()
-  
-  try {
-    console.log(`准备更新备忘录 ${id}`, {
-      title_length: updates.title?.length,
-      content_length: updates.content?.length,
-      timestamp: new Date().toISOString()
-    });
-    
-    // 确保content是字符串类型
-    const safeUpdates = {
-      ...updates,
-      content: typeof updates.content === 'string' ? updates.content : '',
-      updated_at: new Date().toISOString()
-    };
-    
-    // 执行更新操作
-    const { data, error } = await supabase
-      .from("notes")
-      .update(safeUpdates)
-      .eq("id", id)
-      .select()
-      .single()
+// 更新笔记
+export const updateNote = async (id: string, updates: Partial<Note>): Promise<Note | null> => {
+  const client = supabase || await getSupabaseClient()
 
-    if (error) {
-      console.error("Error updating note:", error);
-      console.error("Error details:", error.message, error.details, error.hint);
-      return null;
-    }
-
-    console.log(`备忘录 ${id} 更新成功`, {
-      returned_data: !!data,
-      updated_at: data?.updated_at
-    });
-    
-    return data;
-  } catch (err) {
-    console.error(`更新备忘录时发生意外错误:`, err);
-    return null;
+  // 添加更新时间
+  const updatesWithTimestamp = {
+    ...updates,
+    updated_at: new Date().toISOString(),
   }
+
+  const { data, error } = await client
+    .from("notes")
+    .update(updatesWithTimestamp)
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error updating note:", error)
+    return null
+  }
+
+  return data
 }
 
-// 删除备忘录
+// 删除笔记
 export const deleteNote = async (id: string): Promise<boolean> => {
-  const supabase = getSupabaseClient()
+  const client = supabase || await getSupabaseClient()
 
-  const { error } = await supabase.from("notes").delete().eq("id", id)
+  const { error } = await client.from("notes").delete().eq("id", id)
 
   if (error) {
     console.error("Error deleting note:", error)
@@ -103,5 +99,59 @@ export const deleteNote = async (id: string): Promise<boolean> => {
   }
 
   return true
+}
+
+// 搜索笔记
+export const searchNotes = async (
+  userId: string,
+  query: string,
+  options: {
+    searchInTitle?: boolean
+    searchInContent?: boolean
+    tags?: string[]
+    quadrant?: 1 | 2 | 3 | 4 | null
+  } = {}
+): Promise<Note[]> => {
+  const client = supabase || await getSupabaseClient()
+
+  // 构建基础查询
+  let supabaseQuery = client.from("notes").select("*").eq("user_id", userId)
+
+  // 添加搜索条件
+  if (query) {
+    const searchConditions = []
+    if (options.searchInTitle !== false) {
+      searchConditions.push(`title.ilike.%${query}%`)
+    }
+    if (options.searchInContent !== false) {
+      searchConditions.push(`content.ilike.%${query}%`)
+    }
+    
+    if (searchConditions.length > 0) {
+      supabaseQuery = supabaseQuery.or(searchConditions.join(','))
+    }
+  }
+
+  // 添加标签过滤
+  if (options.tags && options.tags.length > 0) {
+    // 在Postgres中，?操作符检查数组是否包含另一个数组
+    supabaseQuery = supabaseQuery.contains('tags', options.tags)
+  }
+
+  // 添加象限过滤
+  if (options.quadrant) {
+    supabaseQuery = supabaseQuery.eq('quadrant', options.quadrant)
+  }
+
+  // 执行查询
+  const { data, error } = await supabaseQuery
+    .order("updated_at", { ascending: false })
+
+  if (error) {
+    console.error("Error searching notes:", error)
+    return []
+  }
+
+  return data || []
 }
 
