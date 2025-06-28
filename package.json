@@ -2,14 +2,14 @@
   "name": "ai-efficiency",
   "version": "0.1.0",
   "private": true,
-  "main": "main2.cjs",
+  "main": "./dist/main.cjs",
   "description": "AI提效工具应用",
   "author": {
     "name": "Your Name",
     "email": "your.email@example.com"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 30011",
     "debug": "NODE_OPTIONS='--inspect' next dev",
     "build": "next build",
     "start": "next start",
@@ -17,9 +17,11 @@
     "build:ts": "tsc main.ts --outDir dist",
     "build:all": "pnpm build:next && pnpm build:electron",
     "build:next": "next build",
-    "build:electron": "electron-builder --win --config electron-builder.yml",
+    "build:electron": "pnpm convert:main && electron-builder --win --config electron-builder.yml",
     "build:optimized": "cross-env NODE_ENV=production next build && electron-builder --win --config electron-builder.yml",
-    "start:electron": "electron ."
+    "start:electron": "electron .",
+    "start2": "tsc-watch --noClear --onSuccess 'electron .' ",
+    "convert:main": "babel  main.js  --out-file ./dist/main.cjs  --presets=@babel/preset-env   --plugins=@babel/plugin-transform-modules-commonjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

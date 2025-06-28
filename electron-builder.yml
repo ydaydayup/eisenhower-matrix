@@ -2,8 +2,7 @@ appId: com.ai.efficiency
 productName: AI提效
 files:
   - main.js
-  - main.cjs
-  - main2.cjs
+  - dist/main.cjs
   - package.json
   - preload/**/*
   - public/icons/**/*

@@ -86,7 +86,7 @@ const createWindow = async () => {
             nodeIntegration: false, // 禁用Node集成，增强安全性
         },
     });
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
     // 隐藏菜单栏
     mainWindow.setMenuBarVisibility(false);
 
@@ -113,8 +113,9 @@ const createWindow = async () => {
         stopIntercept = () => {};
     }
     // ⬆ Next.js handler ⬆
-
-    mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
+    if (dev) {
+        mainWindow.once('ready-to-show', () => mainWindow.webContents.openDevTools());
+    }
 
     mainWindow.on('closed', () => {
         mainWindow = null;
