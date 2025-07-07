@@ -1,5 +1,4 @@
 "use client"
-
 import {useState, useEffect, JSX} from "react"
 import {PlusCircle, Edit, Trash2, Check, LucideTag, ListTree, Loader2, Pin} from "lucide-react"
 import {Input} from "@/components/ui/input"
@@ -19,7 +18,6 @@ import {SubtaskSidebar} from "@/components/SubtaskSidebar"
 import {ButtonGroup, ButtonGroupItem} from "@/components/ui/button-group"
 import TaskEditModal from "@/components/TaskEditModal"
 import { usePinWindow } from "@/lib/hooks/use-pin-window"
-
 // 定义 Electron 接口
 declare global {
     interface Window {
@@ -29,12 +27,9 @@ declare global {
         };
     }
 }
-
 export const dynamic = 'force-dynamic'
-
 // 视图类型
 type ViewType = "quadrant" | "category" | "simple"
-
 export default function Dashboard() {
     const [tasks, setTasks] = useState<Task[]>([])
     const [tags, setTags] = useState<Tag[]>([])
@@ -47,21 +42,16 @@ export default function Dashboard() {
     const [showCompleted, setShowCompleted] = useState(false)
     // 使用统一的usePinWindow hook
     const { isPinned, togglePin, error, isAvailable } = usePinWindow()
-
     const router = useRouter()
     const {toast} = useToast()
-
     // 编辑任务状态
     const [editModalOpen, setEditModalOpen] = useState(false)
     const [editingTask, setEditingTask] = useState<Task | null>(null)
-
     // 标签管理状态
     const [showTagManager, setShowTagManager] = useState(false)
     const [newTagName, setNewTagName] = useState("")
-
     const [subtaskOpen, setSubtaskOpen] = useState(false)
     const [selectedTaskForSubtask, setSelectedTaskForSubtask] = useState<Task | null>(null)
-
     // 获取用户会话
     useEffect(() => {
         const checkSession = async () => {
@@ -71,32 +61,26 @@ export default function Dashboard() {
                     router.push("/login")
                     return
                 }
-
                 setUser(session)
                 loadUserData(session.id)
             } catch (error) {
-                console.error("Session error:", error)
                 router.push("/login")
             } finally {
                 setIsLoading(false)
             }
         }
-
         checkSession()
     }, [router])
-
     // 加载用户数据
     const loadUserData = async (userId: string) => {
         try {
             // 加载任务
             const userTasks = await getUserTasks(userId)
             setTasks(userTasks)
-
             // 加载标签
             const userTags = await getUserTags(userId)
             setTags(userTags)
         } catch (error) {
-            console.error("Error loading user data:", error)
             toast({
                 title: "加载失败",
                 description: "无法加载数据，请稍后再试",
@@ -104,7 +88,6 @@ export default function Dashboard() {
             })
         }
     }
-
     // 处理任务创建或更新成功
     const handleTaskSuccess = (updatedTask: Task) => {
         if (editingTask) {
@@ -117,13 +100,11 @@ export default function Dashboard() {
             setTasks([updatedTask, ...tasks])
         }
     }
-
     // 打开编辑模态框
     const openEditModal = (task?: Task) => {
         setEditingTask(task || null)
         setEditModalOpen(true)
     }
-
     // 切换任务完成状态
     const toggleTaskCompletion = async (taskId: string, completed: boolean) => {
         try {
@@ -132,7 +113,6 @@ export default function Dashboard() {
                 setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)))
             }
         } catch (error) {
-            console.error("Error toggling task completion:", error)
             toast({
                 title: "更新失败",
                 description: "无法更新任务状态，请稍后再试",
@@ -140,7 +120,6 @@ export default function Dashboard() {
             })
         }
     }
-
     // 删除任务
     const deleteTaskItem = async (taskId: string) => {
         try {
@@ -149,7 +128,6 @@ export default function Dashboard() {
                 setTasks(tasks.filter((task) => task.id !== taskId))
             }
         } catch (error) {
-            console.error("Error deleting task:", error)
             toast({
                 title: "删除失败",
                 description: "无法删除任务，请稍后再试",
@@ -157,23 +135,19 @@ export default function Dashboard() {
             })
         }
     }
-
     // 添加新标签
     const addTag = async () => {
         if (!user || newTagName.trim() === "") return
-
         try {
             const newTag = await createTag({
                 user_id: user.id,
                 name: newTagName.trim(),
             })
-
             if (newTag) {
                 setTags([...tags, newTag])
                 setNewTagName("")
             }
         } catch (error) {
-            console.error("Error adding tag:", error)
             toast({
                 title: "添加失败",
                 description: "无法添加标签，可能已存在相同名称的标签",
@@ -181,7 +155,6 @@ export default function Dashboard() {
             })
         }
     }
-
     // 删除标签
     const deleteTagItem = async (tagId: string) => {
         try {
@@ -191,7 +164,6 @@ export default function Dashboard() {
                 if (tagToDelete) {
                     // 从标签列表中删除
                     setTags(tags.filter((tag) => tag.id !== tagId))
-
                     // 从所有任务中移除该标签
                     const updatedTasks = await Promise.all(
                         tasks
@@ -203,7 +175,6 @@ export default function Dashboard() {
                                 return updatedTask
                             }),
                     )
-
                     // 更新任务列表
                     setTasks(
                         tasks.map((task) => {
@@ -214,7 +185,6 @@ export default function Dashboard() {
                 }
             }
         } catch (error) {
-            console.error("Error deleting tag:", error)
             toast({
                 title: "删除失败",
                 description: "无法删除标签，请稍后再试",
@@ -222,7 +192,6 @@ export default function Dashboard() {
             })
         }
     }
-
     // 切换任务标签
     const toggleTaskTag = (tagName: string) => {
         if (editingTask?.tags.includes(tagName)) {
@@ -237,17 +206,14 @@ export default function Dashboard() {
             } as Task);
         }
     }
-
     // 获取特定象限的任务
     const getQuadrantTasks = (quadrant: number) => {
         return tasks.filter((task) => task.quadrant === quadrant && !task.completed)
     }
-
     // 获取已完成的任务
     const getCompletedTasks = () => {
         return tasks.filter((task) => task.completed)
     }
-
     // 象限配置
     const quadrants = [
         {
@@ -287,7 +253,6 @@ export default function Dashboard() {
             color: "text-emerald-500"
         },
     ]
-
     // 自定义滚动条样式
     const scrollbarStyles = `
     .custom-scrollbar::-webkit-scrollbar {
@@ -304,18 +269,15 @@ export default function Dashboard() {
       background-color: rgba(0, 0, 0, 0.3);
     }
   `
-
     // 获取未完成的任务
     const getActiveTasks = () => {
         return tasks.filter((task) => !task.completed)
     }
-
     // 打开子任务侧边栏
     const openSubtaskSidebar = (task: Task) => {
         setSelectedTaskForSubtask(task)
         setSubtaskOpen(true)
     }
-
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
@@ -323,7 +285,6 @@ export default function Dashboard() {
             </div>
         )
     }
-
     return (
         <>
             <style jsx global>
@@ -339,7 +300,6 @@ export default function Dashboard() {
                         >
                             <PlusCircle className="mr-2 h-4 w-4"/> 添加任务
                         </Button>
-
                         <Dialog open={showTagManager} onOpenChange={setShowTagManager}>
                             <DialogTrigger asChild>
                                 <Button variant="outline" size="sm" className="glass-button rounded-full">
@@ -381,7 +341,6 @@ export default function Dashboard() {
                         </Dialog>
                     </div>
                 </div>
-
                 {/* 视图切换按钮 */}
                 <div className="flex flex-col sm:flex-row gap-2 justify-end mb-6">
                     <ButtonGroup
@@ -411,7 +370,6 @@ export default function Dashboard() {
                         <ButtonGroupItem className="tab-theme">精简</ButtonGroupItem>
                     </ButtonGroup>
                 </div>
-
                 {/* 任务视图区域 */}
                 {viewType === "quadrant" ? (
                     // 四象限视图
@@ -437,7 +395,6 @@ export default function Dashboard() {
                                 <div
                                     className="text-right text-xs text-gray-500 mb-2">{getQuadrantTasks(quadrant.id).length} 项
                                 </div>
-
                                 <div className="space-y-2 h-[250px] sm:h-[320px] overflow-y-auto pr-1 custom-scrollbar">
                                     {getQuadrantTasks(quadrant.id).length > 0 ? (
                                         getQuadrantTasks(quadrant.id).map((task) => (
@@ -468,7 +425,6 @@ export default function Dashboard() {
                                 .map((tag) => {
                                     const tagTasks = getActiveTasks().filter((task) => task.tags.includes(tag.name))
                                     if (tagTasks.length === 0) return null
-
                                     return (
                                         <div key={tag.id} className="glass-card p-5">
                                             <div className="mb-4">
@@ -500,12 +456,10 @@ export default function Dashboard() {
                         ) : (
                             <div className="text-center text-gray-500 py-8 glass-card">暂无标签，请先添加标签</div>
                         )}
-
                         {/* 无标签任务 */}
                         {(() => {
                             const noTagTasks = getActiveTasks().filter((task) => task.tags.length === 0)
                             if (noTagTasks.length === 0) return null
-
                             return (
                                 <div className="glass-card p-5">
                                     <div className="mb-4">
@@ -562,7 +516,6 @@ export default function Dashboard() {
                         </div>
                     </div>
                 )}
-
                 {/* 已完成任务区域 */}
                 <div className="mt-8">
                     <div
@@ -575,7 +528,6 @@ export default function Dashboard() {
                         </h2>
                         <span className="text-sm text-muted-foreground">{showCompleted ? "收起" : "展开"}</span>
                     </div>
-
                     {showCompleted && (
                         <div className="mt-3 space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
                             {getCompletedTasks().length > 0 ? (
@@ -598,7 +550,6 @@ export default function Dashboard() {
                         </div>
                     )}
                 </div>
-
                 {/* 替换原有的 Dialog 为新的 TaskEditModal */}
                 <TaskEditModal
                     open={editModalOpen}
@@ -613,7 +564,6 @@ export default function Dashboard() {
                     userId={user?.id || ''}
                     tags={tags}
                 />
-
                 {/* 子任务侧边栏 */}
                 <SubtaskSidebar
                     open={subtaskOpen}
@@ -624,7 +574,6 @@ export default function Dashboard() {
         </>
     )
 }
-
 // 任务项组件
 function TaskItem({
                       task,
@@ -650,7 +599,6 @@ function TaskItem({
         const today = new Date()
         return dueDate < today
     }
-
     // 更新表单中的日期显示
     const formatDateTime = (dateString: string | null) => {
         if (!dateString) return ""
@@ -659,11 +607,9 @@ function TaskItem({
             if (isNaN(date.getTime())) return dateString
             return format(date, 'yyyy-MM-dd HH:mm')
         } catch (error) {
-            console.error("日期格式化错误:", error)
             return dateString
         }
     }
-
     return (
         <div className={cn(
             "task-item p-3 group",
@@ -691,7 +637,6 @@ function TaskItem({
                             {quadrantInfo?.icon &&
                                 <span className="mr-1 text-xs">{quadrantInfo.icon}</span>} {task.title}
                         </h3>
-
                         {/* 根据视图类型显示不同的内容 */}
                         {viewType === "quadrant" ? (
                             <>
@@ -772,4 +717,3 @@ function TaskItem({
         </div>
     )
 }
-

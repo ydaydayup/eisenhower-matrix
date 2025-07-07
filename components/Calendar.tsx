@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react"
@@ -10,28 +9,23 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterv
 import { zhCN } from "date-fns/locale"
 import { Task } from "@/lib/tasks"
 import { Badge } from "@/components/ui/badge"
-
 interface CalendarProps {
   tasks: Task[]
   onSelectDate: (date: Date) => void
   onEditTask: (task: Task) => void
 }
-
 export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<"month" | "day">("month")
-  
   // 获取月视图的日期数组（包括前后月份的日期以填满网格）
   const getDaysForMonthView = (date: Date) => {
     const monthStart = startOfMonth(date)
     const monthEnd = endOfMonth(date)
     const startDate = startOfWeek(monthStart, { weekStartsOn: 0 }) // 从周日开始
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 })
-    
     return eachDayOfInterval({ start: startDate, end: endDate })
   }
-
   // 获取特定日期的任务，按时间排序
   const getTasksForDate = (date: Date) => {
     return tasks
@@ -46,7 +40,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
         return new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
       })
   }
-
   // 获取任务的时间字符串 (HH:MM)
   const getTaskTime = (taskDate: string) => {
     try {
@@ -58,42 +51,33 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
       return ""
     }
   }
-
   // 切换到上个月/下个月
   const goToPreviousMonth = () => setCurrentDate(subMonths(currentDate, 1))
   const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1))
-  
   // 切换到前一天/后一天
   const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1))
   const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1))
-
   // 切换到前一周/后一周
   const goToPreviousWeek = () => setSelectedDate(subWeeks(selectedDate, 1))
   const goToNextWeek = () => setSelectedDate(addWeeks(selectedDate, 1))
-  
   // 切换到今天
   const goToToday = () => {
     const today = new Date()
     setCurrentDate(today)
     setSelectedDate(today)
   }
-  
   // 选择日期
   const handleSelectDate = (date: Date) => {
     setSelectedDate(date)
-    
     // 如果选择的日期不在当前显示的月份，更新当前月份
     if (!isSameMonth(date, currentDate)) {
       setCurrentDate(date)
     }
-    
     // 直接切换到日视图，不调用onSelectDate避免弹出任务创建窗口
     setViewMode("day")
   }
-  
   // 星期几的表头
   const weekDays = ["日", "一", "二", "三", "四", "五", "六"]
-
   // 获取任务象限的颜色
   const getQuadrantColor = (quadrant: number) => {
     switch (quadrant) {
@@ -104,7 +88,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
       default: return "bg-primary";
     }
   }
-  
   return (
     <div className="glass-card border-0 rounded-2xl overflow-hidden">
       {/* 日历头部 */}
@@ -146,12 +129,11 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
               </Button>
             </div>
           </div>
-          
           <div className="flex items-center gap-2">
             <Button 
               variant="ghost" 
               size="sm" 
-              className="rounded-lg hover:bg-white/40 h-8 text-xs"
+              className="rounded-lg hover:bg-white/40 hover:text-primary h-8 text-xs"
               onClick={goToToday}
             >
               今天
@@ -178,7 +160,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
           </div>
         </div>
       </div>
-      
       {/* 月视图 */}
       {viewMode === "month" && (
         <div className="month-view-container">
@@ -190,7 +171,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
               </div>
             ))}
           </div>
-          
           {/* 日期网格 */}
           <div className="grid grid-cols-7 gap-1">
             {getDaysForMonthView(currentDate).map((date, i) => {
@@ -198,7 +178,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
               const isSelected = isSameDay(date, selectedDate)
               const isCurrentMonth = isSameMonth(date, currentDate)
               const isTodayDate = isToday(date)
-              
               return (
                 <button
                   key={i}
@@ -218,7 +197,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                         {format(date, "d")}
                       </span>
                     </div>
-                    
                     {/* 任务列表预览 */}
                     {dayTasks.length > 0 && (
                       <div className="mt-1 px-1 flex-grow">
@@ -252,7 +230,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
           </div>
         </div>
       )}
-      
       {/* 日视图 */}
       {viewMode === "day" && (
         <div className="p-4 md:p-6">
@@ -276,13 +253,12 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                   <div className="text-sm text-gray-500 font-medium">
                     {format(selectedDate, "yyyy年 M月", { locale: zhCN })}
                   </div>
-                  
                   {/* 快速日期导航 */}
                   <div className="mt-4 flex gap-2">
                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={goToPreviousDay}>
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" className="text-xs h-7 rounded-lg" onClick={goToToday}>
+                    <Button variant="ghost" className="text-xs h-7 rounded-lg hover:text-primary" onClick={goToToday}>
                       今天
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={goToNextDay}>
@@ -292,7 +268,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                 </div>
               </div>
             </div>
-            
             {/* 当天任务列表 */}
             <div className="flex-1 glass-morphism rounded-xl p-4 min-h-[400px]">
               <h4 className="font-medium text-gray-700 flex items-center mb-4">
@@ -301,7 +276,6 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                   {getTasksForDate(selectedDate).length}项
                 </Badge>
               </h4>
-              
               <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-1.5">
                 {getTasksForDate(selectedDate).length > 0 ? (
                   getTasksForDate(selectedDate).map((task, idx) => (
@@ -320,13 +294,11 @@ export default function Calendar({ tasks, onSelectDate, onEditTask }: CalendarPr
                             {getTaskTime(task.due_date)}
                           </div>
                         )}
-                        
                         {/* 任务指示点 */}
                         <div className={cn(
                           "h-3 w-3 rounded-full flex-shrink-0",
                           getQuadrantColor(task.quadrant)
                         )} />
-                        
                         {/* 任务内容 */}
                         <div className="min-w-0 flex-1">
                           <p className={cn(

@@ -1,12 +1,10 @@
 'use client';
-
 /**
  * 系统原生通知hook - 用于发送系统级通知
  * 注意：此hook仅在Electron环境中有效
  */
 export function useNotification() {
   const isElectronAvailable = typeof window !== 'undefined' && window.electron;
-  
   /**
    * 发送系统通知
    * @param title 通知标题
@@ -15,14 +13,11 @@ export function useNotification() {
    */
   const sendNotification = (title: string, body: string, urgency: 'normal' | 'critical' | 'low' = 'normal') => {
     if (!isElectronAvailable) {
-      console.warn('系统通知功能仅在Electron环境中可用');
       return;
     }
-    
     // 使用electron.send方法发送通知
     window.electron?.send('show-notification', { title, body, urgency });
   };
-  
   /**
    * 为待办事项设置截止时间提醒
    * @param taskTitle 任务标题
@@ -41,20 +36,15 @@ export function useNotification() {
     }
   ) => {
     if (!isElectronAvailable) {
-      console.warn('任务提醒功能仅在Electron环境中可用');
       return () => {};
     }
-    
     // 优先使用预计完成时间，如果没有则使用截止时间
     const targetTime = timeOptions.estimatedTime || timeOptions.dueDate;
     if (!targetTime) {
-      console.warn('未提供任何时间信息，无法设置提醒');
       return () => {};
     }
-    
     const now = new Date();
     const timeUntilTarget = targetTime.getTime() - now.getTime();
-    
     // 默认消息
     const defaultMessages = {
       expiredTitle: '任务已过期',
@@ -62,10 +52,8 @@ export function useNotification() {
       reminderTitle: '任务提醒',
       reminderMessage: `任务 "${taskTitle}" 已到预计完成时间`,
     };
-    
     // 合并默认消息和自定义消息
     const messages = {...defaultMessages, ...messageOptions};
-    
     // 如果时间已过，立即发送通知
     if (timeUntilTarget <= 0) {
       sendNotification(
@@ -75,7 +63,6 @@ export function useNotification() {
       );
       return () => {};
     }
-    
     // 设置定时器，在目标时间到达时发送通知
     const timerId = setTimeout(() => {
       sendNotification(
@@ -84,11 +71,9 @@ export function useNotification() {
         'critical'
       );
     }, timeUntilTarget);
-    
     // 返回取消函数
     return () => clearTimeout(timerId);
   };
-  
   return {
     sendNotification,
     scheduleTaskReminder,

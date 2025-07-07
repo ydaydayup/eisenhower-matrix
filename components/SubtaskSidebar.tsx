@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
@@ -9,27 +8,23 @@ import { cn } from "@/lib/utils"
 import { type Task } from "@/lib/tasks"
 import { type Subtask, getTaskSubtasks, createSubtask, updateSubtask, deleteSubtask } from "@/lib/subtasks"
 import { useToast } from "@/hooks/use-toast"
-
 interface SubtaskSidebarProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   task: Task | null
 }
-
 export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps) {
   const [subtasks, setSubtasks] = useState<Subtask[]>([])
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { toast } = useToast()
-
   // 当侧边栏打开并且有选中的任务时，加载子任务
   useEffect(() => {
     if (open && task) {
       loadSubtasks(task.id)
     }
   }, [open, task])
-
   // 加载子任务
   const loadSubtasks = async (taskId: string) => {
     setIsLoading(true)
@@ -39,7 +34,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
         setSubtasks(loadedSubtasks)
       }
     } catch (error) {
-      console.error("Error loading subtasks:", error)
       toast({
         title: "加载失败",
         description: "无法加载子任务，请稍后再试",
@@ -49,11 +43,9 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
       setIsLoading(false)
     }
   }
-
   // 添加子任务
   const handleAddSubtask = async () => {
     if (!task || !newSubtaskTitle.trim()) return
-
     setIsSubmitting(true)
     try {
       const newSubtask = await createSubtask({
@@ -61,7 +53,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
         title: newSubtaskTitle.trim(),
         completed: false,
       })
-
       if (newSubtask) {
         setSubtasks([...subtasks, newSubtask])
         setNewSubtaskTitle("")
@@ -71,7 +62,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
         })
       }
     } catch (error) {
-      console.error("Error adding subtask:", error)
       toast({
         title: "添加失败",
         description: "无法添加子任务，请稍后再试",
@@ -81,7 +71,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
       setIsSubmitting(false)
     }
   }
-
   // 切换子任务完成状态
   const toggleSubtaskCompletion = async (subtaskId: string, completed: boolean) => {
     try {
@@ -90,7 +79,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
         setSubtasks(subtasks.map((st) => (st.id === subtaskId ? updatedSubtask : st)))
       }
     } catch (error) {
-      console.error("Error toggling subtask completion:", error)
       toast({
         title: "更新失败",
         description: "无法更新子任务状态，请稍后再试",
@@ -98,7 +86,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
       })
     }
   }
-
   // 删除子任务
   const handleDeleteSubtask = async (subtaskId: string) => {
     try {
@@ -107,7 +94,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
         setSubtasks(subtasks.filter((st) => st.id !== subtaskId))
       }
     } catch (error) {
-      console.error("Error deleting subtask:", error)
       toast({
         title: "删除失败",
         description: "无法删除子任务，请稍后再试",
@@ -115,7 +101,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
       })
     }
   }
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md md:max-w-lg lg:max-w-xl overflow-y-auto">
@@ -124,7 +109,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
             {task?.title ? `任务：${task.title}` : "子任务管理"}
           </SheetTitle>
         </SheetHeader>
-
         <div className="mt-6 space-y-6">
           <div>
             <h3 className="font-medium mb-3 text-sm md:text-base text-foreground">添加子任务</h3>
@@ -152,7 +136,6 @@ export function SubtaskSidebar({ open, onOpenChange, task }: SubtaskSidebarProps
               </Button>
             </div>
           </div>
-
           <div>
             <h3 className="font-medium mb-3 text-sm md:text-base text-foreground">子任务列表</h3>
             {isLoading ? (

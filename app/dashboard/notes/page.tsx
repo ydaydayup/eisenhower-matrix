@@ -1,12 +1,12 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { PlusCircle, Edit, Trash2, Search } from "lucide-react"
+import { PlusCircle, Edit, Trash2, Search, FileText, Calendar } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { getUserSession } from "@/lib/auth"
@@ -19,7 +19,6 @@ export default function NotesPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editingNote, setEditingNote] = useState<Note | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-
   const router = useRouter()
   const { toast } = useToast()
 
@@ -29,38 +28,33 @@ export default function NotesPage() {
     content: "",
   })
 
+  // 预览状态
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [previewNote, setPreviewNote] = useState<Note | null>(null)
+
   // 获取用户会话
   useEffect(() => {
     const checkSession = async () => {
       try {
-        console.log("Checking user session...")
         const session = await getUserSession()
-        console.log("Session result:", session ? "Found" : "Not found")
-        
         if (!session) {
-          console.log("No session found, redirecting to login")
           router.push("/login")
           return
         }
-
-        console.log("User session found:", session.id)
         setUser(session)
         loadUserNotes(session.id)
       } catch (error) {
-        console.error("Session error:", error)
         router.push("/login")
       } finally {
         setIsLoading(false)
       }
     }
-
     checkSession()
   }, [router])
 
   // 加载用户备忘录
   const loadUserNotes = async (userId: string) => {
     if (!userId) {
-      console.error("Cannot load notes: userId is empty")
       toast({
         title: "加载失败",
         description: "用户ID无效，请重新登录",
@@ -68,14 +62,10 @@ export default function NotesPage() {
       })
       return
     }
-
     try {
-      console.log("Loading notes for user:", userId)
       const userNotes = await getUserNotes(userId)
-      console.log(`Loaded ${userNotes.length} notes`)
       setNotes(userNotes)
     } catch (error) {
-      console.error("Error loading notes:", error)
       toast({
         title: "加载失败",
         description: "无法加载备忘录，请稍后再试",
@@ -87,24 +77,23 @@ export default function NotesPage() {
   // 添加新备忘录
   const addNote = async () => {
     if (!user || noteForm.title.trim() === "") return
-
     try {
       const newNoteData = {
         user_id: user.id,
         title: noteForm.title,
-        content: noteForm.content,
-        tags: [],
-        quadrant: null
+        content: noteForm.content
       }
-
       const createdNote = await createNote(newNoteData)
       if (createdNote) {
         setNotes([createdNote, ...notes])
         resetNoteForm()
         setIsEditing(false)
+        toast({
+          title: "创建成功",
+          description: "备忘录已成功创建",
+        })
       }
     } catch (error) {
-      console.error("Error adding note:", error)
       toast({
         title: "添加失败",
         description: "无法添加备忘录，请稍后再试",
@@ -134,18 +123,19 @@ export default function NotesPage() {
   // 保存编辑后的备忘录
   const saveEditedNote = async () => {
     if (!editingNote || noteForm.title.trim() === "") return
-
     try {
       const updatedNote = await updateNote(editingNote.id, {
         title: noteForm.title,
         content: noteForm.content,
       })
-
       if (updatedNote) {
         setNotes(notes.map((note) => (note.id === editingNote.id ? updatedNote : note)))
+        toast({
+          title: "更新成功",
+          description: "备忘录已成功更新",
+        })
       }
     } catch (error) {
-      console.error("Error updating note:", error)
       toast({
         title: "更新失败",
         description: "无法更新备忘录，请稍后再试",
@@ -164,15 +154,30 @@ export default function NotesPage() {
       const success = await deleteNote(noteId)
       if (success) {
         setNotes(notes.filter((note) => note.id !== noteId))
+        toast({
+          title: "删除成功",
+          description: "备忘录已成功删除",
+        })
       }
     } catch (error) {
-      console.error("Error deleting note:", error)
       toast({
         title: "删除失败",
         description: "无法删除备忘录，请稍后再试",
         variant: "destructive",
       })
     }
+  }
+
+  // 预览备忘录
+  const openPreview = (note: Note) => {
+    setPreviewNote(note)
+    setIsPreviewOpen(true)
+  }
+
+  // 从预览进入编辑
+  const editFromPreview = (note: Note) => {
+    setIsPreviewOpen(false)
+    startEditNote(note)
   }
 
   // 过滤备忘录
@@ -184,13 +189,28 @@ export default function NotesPage() {
 
   // 格式化日期
   const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 1) {
+      return "今天"
+    } else if (diffDays === 2) {
+      return "昨天"
+    } else if (diffDays <= 7) {
+      return `${diffDays - 1}天前`
+    } else {
+      return date.toLocaleDateString("zh-CN", {
+        month: "short",
+        day: "numeric",
+      })
+    }
+  }
+
+  // 获取内容预览
+  const getContentPreview = (content: string) => {
+    return content.length > 80 ? content.substring(0, 80) + "..." : content
   }
 
   if (isLoading) {
@@ -198,122 +218,266 @@ export default function NotesPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4">加载中...</p>
+          <p className="mt-4 text-muted-foreground">加载中...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <main className="container mx-auto p-4 max-w-6xl">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 my-4 sm:my-6">
-        <h1 className="text-xl sm:text-2xl font-bold">随手记</h1>
-        <Button
-          onClick={() => {
-            resetNoteForm()
-            setEditingNote(null)
-            setIsEditing(true)
-          }}
-          size="sm"
-          className="sm:size-default"
-        >
-          <PlusCircle className="mr-2 h-4 w-4" /> 新建备忘录
-        </Button>
-      </div>
-
-      {/* 搜索框 */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="搜索备忘录..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* 备忘录列表 */}
-      {filteredNotes.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {filteredNotes
-            .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-            .map((note) => (
-              <Card key={note.id} className="overflow-hidden">
-                <CardHeader className="pb-2 px-3 sm:px-6">
-                  <CardTitle className="text-base sm:text-lg truncate">{note.title}</CardTitle>
-                  <CardDescription className="text-xs">更新于: {formatDate(note.updated_at)}</CardDescription>
-                </CardHeader>
-                <CardContent className="pb-2 px-3 sm:px-6">
-                  <p className="text-xs sm:text-sm line-clamp-3 sm:line-clamp-4 whitespace-pre-line">{note.content}</p>
-                </CardContent>
-                <CardFooter className="flex justify-end pt-1 pb-1 px-2 sm:px-6">
-                  <Button variant="ghost" size="sm" onClick={() => startEditNote(note)}>
-                    <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => deleteNoteItem(note.id)}>
-                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-        </div>
-      ) : (
-        <div className="text-center text-gray-500 py-8">
-          {searchQuery ? "没有找到匹配的备忘录" : "暂无备忘录，点击右上角添加"}
-        </div>
-      )}
-
-      {/* 备忘录表单对话框 */}
-      <Dialog
-        open={isEditing}
-        onOpenChange={(open) => {
-          if (!open) {
-            setIsEditing(false)
-            setEditingNote(null)
-            resetNoteForm()
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingNote ? "编辑备忘录" : "新建备忘录"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">标题</label>
-              <Input
-                value={noteForm.title}
-                onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
-                placeholder="输入标题"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">内容</label>
-              <Textarea
-                value={noteForm.content}
-                onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
-                placeholder="输入内容"
-                className="min-h-[200px]"
-              />
-            </div>
+    <div className="min-h-screen">
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        {/* 页面头部 */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold text-black">
+              随手记
+            </h1>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditing(false)
-                setEditingNote(null)
-                resetNoteForm()
-              }}
-            >
-              取消
-            </Button>
-            <Button onClick={editingNote ? saveEditedNote : addNote}>{editingNote ? "保存" : "添加"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </main>
+          <Button
+            onClick={() => {
+              resetNoteForm()
+              setEditingNote(null)
+              setIsEditing(true)
+            }}
+            size="lg"
+            className="shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <PlusCircle className="mr-2 h-5 w-5" />
+            新建备忘录
+          </Button>
+        </div>
+
+        {/* 搜索和统计 */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="搜索备忘录标题或内容..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 h-12 bg-background/80 backdrop-blur-sm border-input focus-visible:ring-1 focus-visible:ring-ring shadow-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="px-3 py-1.5">
+              <FileText className="mr-1 h-4 w-4" />
+              {filteredNotes.length} 条记录
+            </Badge>
+          </div>
+        </div>
+
+        {/* 备忘录列表 */}
+        {filteredNotes.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredNotes
+              .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+              .map((note) => (
+                <Card
+                  key={note.id}
+                  className="group hover:shadow-xl transition-all duration-300 border-border bg-card/80 backdrop-blur-sm hover:bg-card hover:-translate-y-1 flex flex-col h-[280px]"
+                >
+                  <CardHeader className="pb-1 pt-3 px-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-base font-semibold text-card-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                        {note.title}
+                      </CardTitle>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditNote(note)}
+                          className="h-6 w-6 p-0 hover:bg-muted hover:text-primary"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteNoteItem(note.id)}
+                          className="h-6 w-6 p-0 hover:bg-muted hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription className="flex items-center gap-1 text-xs">
+                      <Calendar className="h-3 w-3" />
+                      {formatDate(note.updated_at)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-4 flex-grow overflow-hidden">
+                    <p className="text-card-foreground/80 text-sm leading-relaxed line-clamp-4 whitespace-pre-line overflow-ellipsis">
+                      {getContentPreview(note.content)}
+                    </p>
+                  </CardContent>
+                  <CardFooter className="pt-2 border-t border-border/50 mt-auto">
+                    <div className="flex items-center justify-between w-full">
+                      <Badge variant="outline" className="text-xs h-6 px-2 flex items-center">
+                        {note.content.length} 字符
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openPreview(note)}
+                        className="hover:bg-muted hover:text-primary h-6 px-2"
+                      >
+                        <FileText className="mr-1 h-3 w-3" />
+                        预览
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+          </div>
+        ) : (
+          <div className="text-center py-16">
+            <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
+              <FileText className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold text-foreground mb-2">
+              {searchQuery ? "没有找到匹配的备忘录" : "还没有备忘录"}
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {searchQuery ? "尝试使用其他关键词搜索" : "开始记录你的第一个想法吧"}
+            </p>
+            {!searchQuery && (
+              <Button
+                onClick={() => {
+                  resetNoteForm()
+                  setEditingNote(null)
+                  setIsEditing(true)
+                }}
+                size="lg"
+                className="shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <PlusCircle className="mr-2 h-5 w-5" />
+                创建第一个备忘录
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* 备忘录表单对话框 */}
+        <Dialog
+          open={isEditing}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsEditing(false)
+              setEditingNote(null)
+              resetNoteForm()
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[600px] bg-background/95 backdrop-blur-sm">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold">{editingNote ? "编辑备忘录" : "新建备忘录"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">标题</label>
+                <Input
+                  value={noteForm.title}
+                  onChange={(e) => setNoteForm({ ...noteForm, title: e.target.value })}
+                  placeholder="给你的备忘录起个标题..."
+                  className="h-11 bg-background border-input focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground/80">内容</label>
+                <Textarea
+                  value={noteForm.content}
+                  onChange={(e) => setNoteForm({ ...noteForm, content: e.target.value })}
+                  placeholder="在这里记录你的想法..."
+                  className="min-h-[240px] bg-background border-input focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>支持换行和特殊字符</span>
+                  <span>{noteForm.content.length} 字符</span>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditing(false)
+                  setEditingNote(null)
+                  resetNoteForm()
+                }}
+                className="hover:bg-muted"
+              >
+                取消
+              </Button>
+              <Button
+                onClick={editingNote ? saveEditedNote : addNote}
+                disabled={!noteForm.title.trim()}
+              >
+                {editingNote ? "保存更改" : "创建备忘录"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* 预览对话框 */}
+        <Dialog
+          open={isPreviewOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsPreviewOpen(false)
+              setPreviewNote(null)
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[700px] max-h-[80vh] bg-background/95 backdrop-blur-sm">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {previewNote?.title}
+              </DialogTitle>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {previewNote && formatDate(previewNote.updated_at)}
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {previewNote?.content.length} 字符
+                </Badge>
+              </div>
+            </DialogHeader>
+            <div className="py-4 max-h-[50vh] overflow-y-auto">
+              <div className="prose prose-sm max-w-none">
+                <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/90 bg-muted p-4 rounded-lg border">
+                  {previewNote?.content}
+                </pre>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setIsPreviewOpen(false)} className="hover:bg-muted">
+                关闭
+              </Button>
+              <Button
+                onClick={() => previewNote && editFromPreview(previewNote)}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                编辑
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (previewNote) {
+                    deleteNoteItem(previewNote.id)
+                    setIsPreviewOpen(false)
+                  }
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                删除
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </main>
+    </div>
   )
 }
-

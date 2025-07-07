@@ -1,5 +1,4 @@
 "use client"
-
 import { useEditor, EditorContent, Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Heading from '@tiptap/extension-heading'
@@ -15,14 +14,12 @@ import Image from '@tiptap/extension-image'
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-
 interface RichTextEditorProps {
   content: string
   onChange: (content: string) => void
   placeholder?: string
   editable?: boolean
 }
-
 export default function RichTextEditor({
   content,
   onChange,
@@ -32,7 +29,6 @@ export default function RichTextEditor({
   const [isCodeBlockActive, setIsCodeBlockActive] = useState(false)
   const [isLinkMenuOpen, setIsLinkMenuOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -85,19 +81,16 @@ export default function RichTextEditor({
       onChange(editor.getHTML())
     },
   })
-
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content)
     }
   }, [editor, content])
-
   useEffect(() => {
     if (editor) {
       setIsCodeBlockActive(editor.isActive('codeBlock'))
     }
   }, [editor])
-
   // 标题样式
   const toggleHeading = useCallback(
     (level: 1 | 2 | 3 | 4) => {
@@ -106,38 +99,31 @@ export default function RichTextEditor({
     },
     [editor]
   )
-
   // 插入代码块
   const toggleCodeBlock = useCallback(() => {
     if (!editor) return
     editor.chain().focus().toggleCodeBlock().run()
     setIsCodeBlockActive(!isCodeBlockActive)
   }, [editor, isCodeBlockActive])
-
   // 插入表格
   const insertTable = useCallback(() => {
     if (!editor) return
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
   }, [editor])
-
   // 插入分割线
   const insertHorizontalRule = useCallback(() => {
     if (!editor) return
     editor.chain().focus().setHorizontalRule().run()
   }, [editor])
-
   // 处理链接
   const setLink = useCallback(() => {
     if (!editor) return
-    
     const previousUrl = editor.getAttributes('link').href
     setLinkUrl(previousUrl || '')
     setIsLinkMenuOpen(true)
   }, [editor])
-
   const confirmLink = useCallback(() => {
     if (!editor) return
-    
     if (linkUrl === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run()
     } else {
@@ -147,11 +133,9 @@ export default function RichTextEditor({
         .setLink({ href: linkUrl })
         .run()
     }
-    
     setIsLinkMenuOpen(false)
     setLinkUrl('')
   }, [editor, linkUrl])
-
   // 判断是否激活
   const isActive = useCallback(
     (type: string, options = {}) => {
@@ -160,11 +144,9 @@ export default function RichTextEditor({
     },
     [editor]
   )
-
   if (!editor) {
     return null
   }
-
   return (
     <div className="rich-text-editor">
       <EditorContent editor={editor} className="prose max-w-none w-full" />

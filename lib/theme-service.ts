@@ -1,8 +1,6 @@
 // 主题设置后端存储服务
 // 这个文件定义了与后端交互来保存和检索用户主题设置的函数
-
 import { getUserSession } from './auth';
-
 // 定义主题数据类型
 export interface ThemeSettings {
   currentTheme: string;
@@ -20,7 +18,6 @@ export interface ThemeSettings {
     };
   }>;
 }
-
 /**
  * 保存用户主题设置到后端
  * 
@@ -33,11 +30,9 @@ export async function saveUserThemeSettings(settings: ThemeSettings): Promise<bo
   try {
     const session = await getUserSession();
     if (!session) return false;
-    
     // TODO: 实现后端API调用
     // 这里需要实现后端API调用逻辑
     // 例如使用fetch或axios发送请求到后端API
-    
     /* 
     // 后端API实现示例:
     const response = await fetch('/api/user/theme-settings', {
@@ -50,19 +45,14 @@ export async function saveUserThemeSettings(settings: ThemeSettings): Promise<bo
         settings: settings
       }),
     });
-    
     return response.ok;
     */
-    
     // 如果后端API未实现，返回false表示使用本地存储作为后备
-    console.log('后端主题存储API未实现，使用本地存储作为后备');
     return false;
   } catch (error) {
-    console.error('保存主题设置到后端失败:', error);
     return false;
   }
 }
-
 /**
  * 从后端获取用户主题设置
  * 
@@ -74,29 +64,22 @@ export async function getUserThemeSettings(): Promise<ThemeSettings | null> {
   try {
     const session = await getUserSession();
     if (!session) return null;
-    
     // TODO: 实现后端API调用
     // 这里需要实现从后端获取主题设置的逻辑
-    
     /* 
     // 后端API实现示例:
     const response = await fetch(`/api/user/theme-settings?userId=${session.id}`);
-    
     if (response.ok) {
       const data = await response.json();
       return data.settings as ThemeSettings;
     }
     */
-    
     // 如果后端API未实现，返回null表示使用本地存储
-    console.log('后端主题检索API未实现，使用本地存储');
     return null;
   } catch (error) {
-    console.error('从后端获取主题设置失败:', error);
     return null;
   }
 }
-
 /**
  * 数据库设计建议
  * 

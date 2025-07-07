@@ -1,11 +1,9 @@
 'use client';
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Pin, PinOff, AlertCircle } from 'lucide-react';
 import { usePinWindow } from '@/lib/hooks/use-pin-window';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
 interface PinWindowButtonProps {
   variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'link' | 'destructive';
   size?: 'default' | 'sm' | 'lg' | 'icon';
@@ -13,7 +11,6 @@ interface PinWindowButtonProps {
   debug?: boolean;
   isCollapsed?: boolean;
 }
-
 export function PinWindowButton({ 
   variant = 'outline', 
   size = 'default',
@@ -23,27 +20,20 @@ export function PinWindowButton({
 }: PinWindowButtonProps) {
   const { isPinned, togglePin, refreshStatus, error, isAvailable } = usePinWindow();
   const [buttonState, setButtonState] = useState(false);
-  
   // 初始化和状态变化时更新按钮状态
   useEffect(() => {
     setButtonState(isPinned);
-    
     // 组件挂载时刷新状态
     refreshStatus();
-    
     // 定期刷新状态
     const intervalId = setInterval(() => {
       refreshStatus();
     }, 1000);
-    
     return () => clearInterval(intervalId);
   }, [isPinned, refreshStatus]);
-  
   // 显示调试信息
   if (debug) {
-    console.log('[PinWindowButton]', { isPinned, buttonState, error, isAvailable });
   }
-  
   // 功能不可用时，可以选择显示一个禁用的按钮或返回null
   if (!isAvailable) {
     if (debug) {
@@ -56,7 +46,6 @@ export function PinWindowButton({
     }
     return null;
   }
-  
   // 有错误时显示错误按钮
   if (error) {
     return (
@@ -67,7 +56,7 @@ export function PinWindowButton({
               variant="destructive"
               size={size}
               className={className}
-              onClick={() => console.error('[PinWindowButton] 错误:', error)}
+              onClick={() => refreshStatus()}
             >
               <AlertCircle className="h-4 w-4 mr-2" />
               钉在桌面
@@ -80,7 +69,6 @@ export function PinWindowButton({
       </TooltipProvider>
     );
   }
-  
   const handleToggle = () => {
     togglePin();
     // 立即更新按钮状态，提供即时反馈
@@ -88,7 +76,6 @@ export function PinWindowButton({
     // 延迟后再次刷新状态，确保与主进程同步
     setTimeout(refreshStatus, 500);
   };
-  
   return (
     <TooltipProvider>
       <Tooltip>
@@ -127,5 +114,4 @@ export function PinWindowButton({
     </TooltipProvider>
   );
 }
-
 export default PinWindowButton; 

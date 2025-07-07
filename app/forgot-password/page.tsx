@@ -1,7 +1,5 @@
 "use client"
-
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -11,17 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { resetPassword } from "@/lib/auth"
-
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
     if (!email) {
       toast({
         title: "请输入邮箱",
@@ -30,12 +25,9 @@ export default function ForgotPasswordPage() {
       })
       return
     }
-
     setIsLoading(true)
-
     try {
       const success = await resetPassword(email)
-
       if (success) {
         setIsSubmitted(true)
         toast({
@@ -59,7 +51,6 @@ export default function ForgotPasswordPage() {
       setIsLoading(false)
     }
   }
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
@@ -69,7 +60,6 @@ export default function ForgotPasswordPage() {
             {isSubmitted ? "重置链接已发送" : "请输入您的注册邮箱获取重置链接"}
           </CardDescription>
         </CardHeader>
-
         {!isSubmitted ? (
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
@@ -111,4 +101,3 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
-

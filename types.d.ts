@@ -1,7 +1,5 @@
 declare module 'quill-markdown-shortcuts'; 
-
 export {}
-
 declare global {
   interface Window {
     electron?: {

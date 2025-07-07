@@ -1,8 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
-
 // 调试信息
-console.log("预加载脚本开始执行");
-
 try {
   // 添加窗口控制API
   contextBridge.exposeInMainWorld('windowControls', {
@@ -11,7 +8,6 @@ try {
     close: () => ipcRenderer.send('window-control', 'close'),
     isMaximized: () => ipcRenderer.invoke('window-is-maximized')
   });
-
   // 添加electron通信API
   contextBridge.exposeInMainWorld('electron', {
     send: (channel, ...args) => ipcRenderer.send(channel, ...args),
@@ -36,8 +32,5 @@ try {
       checkExpiry: () => ipcRenderer.invoke('auth-check-expiry')
     }
   });
-
-  console.log("预加载脚本成功暴露API");
 } catch (error) {
-  console.error("预加载脚本执行错误:", error);
 } 

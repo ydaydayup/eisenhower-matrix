@@ -21,10 +21,10 @@ files:
 extraResources:
   - from: "node_modules/next-electron-rsc/"
     to: "app/node_modules/next-electron-rsc/"
-asar: false
+asar: true
 asarUnpack:
   - "node_modules/next-electron-rsc/**/*"
-compression: maximum
+compression: normal
 directories:
   output: dist
   buildResources: public/icons
@@ -33,11 +33,19 @@ electronDownload:
   cache: ./electron-cache
 win:
   target: nsis
-  icon: "icon-512x512.png"
+  icon: "public/icons/icon-512x512.png"
 #     - target: nsis
 #       arch: x64
 #   arch: x64
 #   icon: build/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: "AI提效"
+  menuCategory: "AI工具"
 mac:
   target: dmg
   icon: "icon.png"
