@@ -22,6 +22,8 @@ extraResources:
   - from: "node_modules/next-electron-rsc/"
     to: "app/node_modules/next-electron-rsc/"
 asar: true
+publish:
+  - provider: github
 asarUnpack:
   - "node_modules/next-electron-rsc/**/*"
 compression: normal
@@ -33,11 +35,10 @@ electronDownload:
   cache: ./electron-cache
 win:
   target: nsis
-  icon: "public/icons/icon-512x512.png"
-#     - target: nsis
-#       arch: x64
-#   arch: x64
-#   icon: build/icon.ico
+#   icon: "./public/icons/icon-5512x512.ico"
+  icon: ./public/favicon.ico
+  signAndEditExecutable: false
+
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -46,6 +47,8 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: "AI提效"
   menuCategory: "AI工具"
+  installerIcon: ./public/favicon.ico
+#   installerIcon: ./public/icons/icon.png
 mac:
   target: dmg
   icon: "icon.png"
