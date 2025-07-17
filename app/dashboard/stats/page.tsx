@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -10,19 +9,15 @@ import { useToast } from "@/hooks/use-toast"
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from "recharts"
 import { type Task, getUserTasks } from "@/lib/tasks"
 import { type Note, getUserNotes } from "@/lib/notes"
-
 // 添加动态配置
 export const dynamic = 'force-dynamic'
-
 export default function StatsPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [notes, setNotes] = useState<Note[]>([])
   const [user, setUser] = useState<{ id: string; name: string; email: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
   const router = useRouter()
   const { toast } = useToast()
-
   // 获取用户会话
   useEffect(() => {
     const checkSession = async () => {
@@ -32,32 +27,26 @@ export default function StatsPage() {
           router.push("/login")
           return
         }
-
         setUser(session)
         loadUserData(session.id)
       } catch (error) {
-        console.error("Session error:", error)
         router.push("/login")
       } finally {
         setIsLoading(false)
       }
     }
-
     checkSession()
   }, [router])
-
   // 加载用户数据
   const loadUserData = async (userId: string) => {
     try {
       // 加载任务
       const userTasks = await getUserTasks(userId)
       setTasks(userTasks)
-
       // 加载备忘录
       const userNotes = await getUserNotes(userId)
       setNotes(userNotes)
     } catch (error) {
-      console.error("Error loading user data:", error)
       toast({
         title: "加载失败",
         description: "无法加载数据，请稍后再试",
@@ -65,7 +54,6 @@ export default function StatsPage() {
       })
     }
   }
-
   // 计算任务统计数据
   const taskStats = {
     total: tasks.length,
@@ -99,7 +87,6 @@ export default function StatsPage() {
         .slice(0, 5) // 只取前5个标签
     })(),
   }
-
   // 计算备忘录统计数据
   const noteStats = {
     total: notes.length,
@@ -118,10 +105,8 @@ export default function StatsPage() {
         .slice(-6) // 只取最近6个月
     })(),
   }
-
   // 饼图颜色
   const COLORS = ["#FF8042", "#0088FE", "#00C49F", "#FFBB28"]
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -132,19 +117,16 @@ export default function StatsPage() {
       </div>
     )
   }
-
   return (
     <main className="container mx-auto p-4 max-w-6xl">
       <div className="flex justify-between items-center my-6">
         <h1 className="text-2xl font-bold">数据统计</h1>
       </div>
-
       <Tabs defaultValue="tasks">
         <TabsList className="mb-4">
           <TabsTrigger value="tasks">任务统计</TabsTrigger>
           <TabsTrigger value="notes">备忘录统计</TabsTrigger>
         </TabsList>
-
         <TabsContent value="tasks">
           {/* 任务概览卡片 */}
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-6">
@@ -156,7 +138,6 @@ export default function StatsPage() {
                 <div className="text-2xl font-bold">{taskStats.total}</div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">已完成任务</CardTitle>
@@ -169,7 +150,6 @@ export default function StatsPage() {
                 />
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">进行中任务</CardTitle>
@@ -178,7 +158,6 @@ export default function StatsPage() {
                 <div className="text-2xl font-bold">{taskStats.active}</div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">已过期任务</CardTitle>
@@ -188,7 +167,6 @@ export default function StatsPage() {
               </CardContent>
             </Card>
           </div>
-
           {/* 任务分布图表 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
             <Card>
@@ -200,20 +178,34 @@ export default function StatsPage() {
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                      <Pie
-                        data={taskStats.byQuadrant}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ value }) => `${value}`}
-                        outerRadius={({ viewBox }) => Math.min(viewBox.width, viewBox.height) / 3}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {taskStats.byQuadrant.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
+                      {taskStats.byQuadrant.length > 0 ? (
+                        <Pie
+                          data={taskStats.byQuadrant}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ value }) => `${value}`}
+                          outerRadius={({ viewBox }) => {
+                            if (!viewBox) {
+                              return 100;
+                            }
+                            if (!viewBox.width || !viewBox.height) {
+                              return 100;
+                            }
+                            return Math.min(viewBox.width, viewBox.height) / 3;
+                          }}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {taskStats.byQuadrant.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                      ) : (
+                        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                          暂无数据
+                        </text>
+                      )}
                       <Tooltip />
                       <Legend layout="horizontal" verticalAlign="bottom" align="center" />
                     </PieChart>
@@ -221,7 +213,6 @@ export default function StatsPage() {
                 </div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
                 <CardTitle>标签分布</CardTitle>
@@ -244,7 +235,13 @@ export default function StatsPage() {
                         tickFormatter={(value) => (value.length > 10 ? `${value.substring(0, 10)}...` : value)}
                       />
                       <Tooltip />
-                      <Bar dataKey="value" fill="#8884d8" />
+                      {taskStats.byTag.length > 0 ? (
+                        <Bar dataKey="value" fill="#8884d8" />
+                      ) : (
+                        <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                          暂无数据
+                        </text>
+                      )}
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -252,7 +249,6 @@ export default function StatsPage() {
             </Card>
           </div>
         </TabsContent>
-
         <TabsContent value="notes">
           {/* 备忘录概览卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -264,7 +260,6 @@ export default function StatsPage() {
                 <div className="text-2xl font-bold">{noteStats.total}</div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">平均字数</CardTitle>
@@ -274,7 +269,6 @@ export default function StatsPage() {
               </CardContent>
             </Card>
           </div>
-
           {/* 备忘录分布图表 */}
           <Card>
             <CardHeader>
@@ -289,14 +283,23 @@ export default function StatsPage() {
                       dataKey="name"
                       tick={{ fontSize: "0.75rem" }}
                       tickFormatter={(value) => {
-                        // 在移动端简化日期显示
-                        const parts = value.split("-")
-                        return window.innerWidth < 640 ? parts[1] : value
+                        try {
+                          const parts = value.split("-");
+                          return typeof window !== 'undefined' && window.innerWidth < 640 ? parts[1] : value;
+                        } catch (e) {
+                          return value;
+                        }
                       }}
                     />
                     <YAxis tick={{ fontSize: "0.75rem" }} />
                     <Tooltip />
-                    <Bar dataKey="value" fill="#8884d8" />
+                    {noteStats.byMonth.length > 0 ? (
+                      <Bar dataKey="value" fill="#8884d8" />
+                    ) : (
+                      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                        暂无数据
+                      </text>
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -307,4 +310,3 @@ export default function StatsPage() {
     </main>
   )
 }
-

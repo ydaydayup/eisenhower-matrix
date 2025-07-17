@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic'; // ⚠️⚠️⚠️ THIS IS REQUIRED T
 export async function POST(request: Request) {
   try {
     const { title } = await request.json()
-
     // 调用 Moonshot API 生成任务分析
     const response = await fetch('https://api.moonshot.cn/v1/chat/completions', {
       method: 'POST',
@@ -29,14 +28,11 @@ export async function POST(request: Request) {
         stream: true // 启用流式输出
       })
     })
-
     if (!response.ok) {
       throw new Error('API request failed')
     }
-
     // 创建流式响应
     const stream = OpenAIStream(response)
-    
     // 将 AsyncGenerator 转换为 ReadableStream
     const readableStream = new ReadableStream({
       async start(controller) {
@@ -50,7 +46,6 @@ export async function POST(request: Request) {
         }
       }
     })
-
     // 返回流式响应
     return new Response(readableStream, {
       headers: {
@@ -58,9 +53,7 @@ export async function POST(request: Request) {
         'Transfer-Encoding': 'chunked'
       }
     })
-
   } catch (error) {
-    console.error('Error:', error)
     return NextResponse.json(
       { error: 'Failed to generate analysis',status: 500 },
     )

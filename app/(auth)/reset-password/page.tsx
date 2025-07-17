@@ -1,31 +1,25 @@
 'use client';
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
-
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
       // 这里添加重置密码的逻辑
       await new Promise(resolve => setTimeout(resolve, 1500)); // 模拟API请求
-      
       toast({
         title: "重置链接已发送",
         description: "请检查您的邮箱以获取重置密码的链接",
       });
-      
       // 重定向到登录页面
       router.push("/login");
     } catch (error) {
@@ -38,7 +32,6 @@ export default function ResetPasswordPage() {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="flex flex-col space-y-6 w-full max-w-md p-6 mx-auto">
       <div className="space-y-2 text-center">

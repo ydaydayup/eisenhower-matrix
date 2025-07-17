@@ -5,16 +5,15 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { AutoLoginProvider } from "@/components/auto-login-provider"
-
+import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { cn } from "@/lib/utils"
 const inter = Inter({ subsets: ["latin"] })
-
 export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#000000' },
   ]
 }
-
 export const metadata: Metadata = {
   title: "AI提效",
   description: "提升办公、生活效率的待办事项管理应用",
@@ -31,7 +30,6 @@ export const metadata: Metadata = {
     title: "AI提效"
   }
 }
-
 // 在服务器端无法使用usePathname，我们将判断逻辑移到ThemeSwitcher组件中
 export default function RootLayout({
   children,
@@ -56,18 +54,18 @@ export default function RootLayout({
         <div className="fixed inset-0 z-[-1] bg-background" />
         <div className="fixed top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
         <div className="fixed bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-accent/5 blur-3xl" />
-        
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          <Toaster />
-          <AutoLoginProvider>
-            <main className="relative z-10">
-              {children}
-            </main>
-          </AutoLoginProvider>
+          <ErrorBoundary>
+            <Toaster />
+            <AutoLoginProvider>
+              <main className="relative z-10">
+                {children}
+              </main>
+            </AutoLoginProvider>
+          </ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>
   )
 }
-
 import './globals.css'

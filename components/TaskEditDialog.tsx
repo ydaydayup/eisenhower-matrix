@@ -1,5 +1,4 @@
 "use client"
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -12,7 +11,6 @@ import { zhCN } from 'date-fns/locale'
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-
 interface TaskEditDialogProps {
   open: boolean
   task: Task | null
@@ -27,7 +25,6 @@ interface TaskEditDialogProps {
   }
   setTaskForm: (taskForm: any) => void
 }
-
 export default function TaskEditDialog({
   open,
   task,
@@ -44,11 +41,9 @@ export default function TaskEditDialog({
         return date
       }
     } catch (error) {
-      console.error('Error parsing date:', error)
     }
     return undefined
   }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
@@ -69,7 +64,6 @@ export default function TaskEditDialog({
               placeholder="输入任务名称"
             />
           </div>
-
           <div>
             <label className="text-sm font-medium">优先级（象限）</label>
             <Select
@@ -89,7 +83,6 @@ export default function TaskEditDialog({
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <label className="text-sm font-medium">截止日期</label>
             <Popover>
@@ -134,7 +127,6 @@ export default function TaskEditDialog({
                     fromDate={new Date()}
                   />
                 </div>
-                
                 <div className="p-3 border-b">
                   <div className="flex justify-between items-center gap-2">
                     <div>
@@ -159,7 +151,6 @@ export default function TaskEditDialog({
                         </SelectContent>
                       </Select>
                     </div>
-                    
                     <div>
                       <label className="text-xs text-muted-foreground">分钟</label>
                       <Select
@@ -184,7 +175,6 @@ export default function TaskEditDialog({
                     </div>
                   </div>
                 </div>
-                
                 <div className="p-3 flex justify-between">
                   <Button 
                     variant="outline" 
@@ -203,7 +193,6 @@ export default function TaskEditDialog({
               </PopoverContent>
             </Popover>
           </div>
-
           <div>
             <label className="text-sm font-medium">备注</label>
             <Textarea

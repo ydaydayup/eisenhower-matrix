@@ -1,8 +1,7 @@
 "use client"
-
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight, Palette, GripVertical, Pin } from "lucide-react"
+import { CheckSquare, BarChart3, StickyNote, Menu, LogOut, Calendar, ChevronLeft, ChevronRight, Palette, GripVertical, Pin, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -21,27 +20,10 @@ import React from "react"
 import { useClient } from "@/lib/hooks/use-client"
 import { usePinWindow } from "@/lib/hooks/use-pin-window"
 import PinWindowButton from "@/components/PinWindowButton"
-
-// 添加Electron类型定义
-declare global {
-  interface Window {
-    electron?: {
-      send: (channel: string, ...args: any[]) => void;
-      receive: (channel: string, func: (...args: any[]) => void) => void;
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-      showNotification: (options: any) => void;
-      togglePinWindow: () => void;
-      setPinStatus: (isPinned: boolean) => void;
-      isWindowPinned: () => Promise<boolean>;
-      test?: () => string;
-    };
-  }
-}
-
+// 添加Electron类型在types.d.ts中定义，不需要在这里重复定义
 interface SidebarProps {
   user: { id: string; name: string; email: string } | null
 }
-
 // 定义图标映射
 const IconMap = {
   CheckSquare,
@@ -55,9 +37,9 @@ const IconMap = {
   ChevronRight,
   Palette,
   GripVertical,
-  Pin
+  Pin,
+  Settings
 };
-
 // 定义侧边栏项目类型
 interface SidebarItem {
   id: string;
@@ -65,7 +47,6 @@ interface SidebarItem {
   href: string;
   icon: keyof typeof IconMap; // 确保类型安全
 }
-
 // 定义可排序组件，将其移出主组件
 const SortableItemComponent = ({ 
   id, 
@@ -85,15 +66,12 @@ const SortableItemComponent = ({
   setUserIntentionalNavigation: (value: boolean) => void
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
-  
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   }
-  
   // 安全地获取图标组件
   const IconComponent = IconMap[item.icon] || IconMap.StickyNote;
-  
   return (
     <div ref={setNodeRef} style={style} className="flex items-center">
       <div 
@@ -112,7 +90,6 @@ const SortableItemComponent = ({
         onClick={() => {
           // 设置用户有意图的导航
           setUserIntentionalNavigation(true);
-          
           // 如果是移动端，点击后关闭侧边栏
           if (isMobile) {
             setIsOpen(false)
@@ -139,12 +116,10 @@ const SortableItemComponent = ({
     </div>
   )
 }
-
 // 使用dynamic导入，禁用SSR
 const SortableItem = dynamic(() => Promise.resolve(SortableItemComponent), { 
   ssr: false 
 })
-
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const [isMobile, setIsMobile] = useState(false)
@@ -160,7 +135,6 @@ export function Sidebar({ user }: SidebarProps) {
   const isElectron = isClient && typeof window !== 'undefined' && !!window.electron
   // 引入窗口置顶功能
   const { isPinned, lastUpdate, togglePin, refreshStatus, isAvailable, setPinStatus } = usePinWindow()
-  
   // 组件挂载时和窗口获得焦点时刷新状态
   useEffect(() => {
     // 组件挂载时请求一次状态
@@ -168,10 +142,8 @@ export function Sidebar({ user }: SidebarProps) {
       refreshStatus();
     }
   }, [isElectron, isAvailable, refreshStatus]);
-  
   // 主题按钮引用
   const themeButtonRef = useRef<HTMLButtonElement>(null)
-
   // 默认侧边栏项目
   const defaultSidebarItems: SidebarItem[] = [
     {
@@ -199,10 +171,8 @@ export function Sidebar({ user }: SidebarProps) {
       icon: "BarChart3",
     },
   ]
-  
   // 添加排序状态
   const [orderedItems, setOrderedItems] = useState<SidebarItem[]>(defaultSidebarItems)
-  
   // 设置拖拽传感器
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -210,29 +180,24 @@ export function Sidebar({ user }: SidebarProps) {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   )
-  
   // 客户端初始化
   useEffect(() => {
     setClientReady(true) // 标记客户端已就绪
-    
     // 检测窗口大小并设置移动状态
     const checkIsMobile = () => {
       const mobile = window.innerWidth < 768
       setIsMobile(mobile)
-      
       // 如果切换到移动设备，强制展开侧边栏
       if (mobile && isCollapsed) {
         setIsCollapsed(false)
       }
     }
-    
     // 从localStorage读取状态
     try {
       const savedCollapsedState = localStorage.getItem('sidebar-collapsed')
       if (savedCollapsedState !== null) {
         setIsCollapsed(savedCollapsedState === 'true')
       }
-      
       // 读取排序
       const savedOrder = localStorage.getItem('sidebar-order')
       if (savedOrder) {
@@ -260,64 +225,53 @@ export function Sidebar({ user }: SidebarProps) {
           });
           setOrderedItems(validatedItems)
         } catch (e) {
-          console.error('解析本地排序数据失败:', e)
         }
       }
     } catch (error) {
-      console.error('无法访问localStorage:', error)
     }
-    
     // 初始检查并设置监听器
     checkIsMobile()
     window.addEventListener("resize", checkIsMobile)
-    
     return () => {
       window.removeEventListener("resize", checkIsMobile)
     }
   }, [])
-  
   // 用户加载后从后端加载排序
   useEffect(() => {
     // 如果客户端已就绪且已登录用户，尝试从后端加载排序
     if (clientReady && user) {
       loadSidebarOrderFromBackend()
-        .catch(err => console.error('加载用户排序偏好失败:', err))
+        .catch(err => {
+          // 处理错误
+        })
     }
   }, [user, clientReady])
-  
   // 修改自动导航到第一个tab页的逻辑
   useEffect(() => {
     // 仅当客户端就绪、有用户登录且当前路径为主页或登录页时执行
     // 不在dashboard主页执行，因为可能是用户点击了待办事项tab
     const isHomeOrLogin = pathname === '/' || pathname === '/login';
-    
     if (clientReady && user && isHomeOrLogin && !userIntentionalNavigation) {
       // 使用排序后的项目列表
       if (orderedItems.length > 0) {
         const firstItem = orderedItems[0]
-        
         // 导航到第一个页面
-        console.log('导航到排序中的第一个页面:', firstItem.href)
         router.push(firstItem.href)
       }
     }
   }, [clientReady, user, orderedItems, pathname, router, userIntentionalNavigation])
-
   // 保存折叠状态到localStorage
   const toggleCollapsed = () => {
     const newState = !isCollapsed
     setIsCollapsed(newState)
-    
     // 安全地访问localStorage - 确保只在客户端执行
     if (clientReady) {
       try {
         localStorage.setItem('sidebar-collapsed', String(newState))
       } catch (error) {
-        console.error('无法保存到localStorage:', error)
       }
     }
   }
-
   // 退出登录
   const handleLogout = async () => {
     try {
@@ -328,7 +282,6 @@ export function Sidebar({ user }: SidebarProps) {
       })
       // 退出登录后会自动跳转到登录页面
     } catch (error) {
-      console.error("Logout error:", error)
       toast({
         title: "退出失败",
         description: "退出登录时发生错误，请稍后再试",
@@ -336,7 +289,6 @@ export function Sidebar({ user }: SidebarProps) {
       })
     }
   }
-
   // 修复静态渲染部分的图标渲染
   // 在客户端还未准备好时使用静态渲染
   const renderStaticItems = () => {
@@ -369,7 +321,6 @@ export function Sidebar({ user }: SidebarProps) {
       </div>
     ));
   }
-
   // 修改SidebarContent组件
   const SidebarContent = () => {
     return (
@@ -418,11 +369,9 @@ export function Sidebar({ user }: SidebarProps) {
             renderStaticItems()
           )}
         </div>
-
         <div className="mt-auto px-2 py-3 md:px-3 md:py-4 space-y-2">
           {/* 钉在桌面按钮 - 仅在Electron环境显示 */}
           {renderPinButton()}
-          
           {/* 主题设置按钮 */}
           <Button
             ref={themeButtonRef}
@@ -441,7 +390,6 @@ export function Sidebar({ user }: SidebarProps) {
               主题设置
             </span>
           </Button>
-          
           <Button
             variant="outline"
             className={cn("w-full justify-start text-sm", isCollapsed ? "px-2" : "")}
@@ -459,38 +407,32 @@ export function Sidebar({ user }: SidebarProps) {
       </div>
     )
   }
-
   // 修改handleDragEnd保存部分
   const handleDragEnd = (event: any) => {
     const { active, over } = event
-    
     if (active.id !== over.id) {
       setOrderedItems((items) => {
         const oldIndex = items.findIndex(item => item.id === active.id)
         const newIndex = items.findIndex(item => item.id === over.id)
-        
         const newItems = arrayMove(items, oldIndex, newIndex)
-        
         // 确保只在客户端执行localStorage操作
         if (clientReady) {
           try {
             localStorage.setItem('sidebar-order', JSON.stringify(newItems))
           } catch (error) {
-            console.error('保存排序到localStorage失败:', error)
           }
         }
-        
         // 调用保存函数，仅在登录时保存
         if (user) {
           saveSidebarOrderToBackend(newItems)
-            .catch(err => console.error('保存排序失败:', err))
+            .catch(err => {
+              // 处理错误
+            })
         }
-        
         return newItems
       })
     }
   }
-
   // 修改保存排序到后端的函数，添加错误处理
   const saveSidebarOrderToBackend = async (items: SidebarItem[]) => {
     localStorage.setItem('sidebar-order', JSON.stringify(items));
@@ -507,14 +449,14 @@ export function Sidebar({ user }: SidebarProps) {
     //   localStorage.setItem('sidebar-order', JSON.stringify(items));
     //   // 检查是否需要使用本地缓存
     //   if (data.useLocalCache) {
-    //     console.log('后端存储不可用，使用本地缓存:', data.message || '未知原因');
+    //     
     //     // 保存到本地存储
     //     if (clientReady) {
     //       try {
     //         localStorage.setItem('sidebar-order', JSON.stringify(items));
-    //         console.log('已保存排序到本地缓存');
+    //         
     //       } catch (error) {
-    //         console.error('保存到本地缓存失败:', error);
+    //         
     //       }
     //     }
     //
@@ -528,20 +470,19 @@ export function Sidebar({ user }: SidebarProps) {
     //
     //   return data;
     // } catch (error) {
-    //   console.error('保存排序到后端失败:', error);
+    //   
     //   // 出错时也保存到本地
     //   if (clientReady) {
     //     try {
     //       localStorage.setItem('sidebar-order', JSON.stringify(items));
-    //       console.log('保存到后端失败，已保存到本地缓存');
+    //       
     //     } catch (localError) {
-    //       console.error('保存到本地缓存也失败:', localError);
+    //       
     //     }
     //   }
     //   return Promise.reject(error);
     // }
   };
-
   // 从后端加载排序的函数，增强错误处理和本地缓存备份
   const loadSidebarOrderFromBackend = async () => {
     return loadFromLocalStorage();
@@ -552,34 +493,32 @@ export function Sidebar({ user }: SidebarProps) {
     //
     //   // 检查是否需要使用本地缓存
     //   if (data.useLocalCache || !response.ok) {
-    //     console.log('后端存储不可用，使用本地缓存:', data.message || data.error || '未知原因');
+    //     
     //     return loadFromLocalStorage();
     //   }
     //
     //   // 如果没有设置或设置为空，也使用本地缓存
     //   if (!data.settings || !data.settings.sidebarOrder) {
-    //     console.log('后端无保存的排序，使用本地缓存');
+    //     
     //     return loadFromLocalStorage();
     //   }
     //
     //   // 将后端数据设置到state
     //   const orderIds = data.settings.sidebarOrder as string[];
     //   if (applyOrderToState(orderIds)) {
-    //     console.log('成功从后端加载排序');
+    //     
     //     return true;
     //   }
     //
     //   return false;
     // } catch (error) {
-    //   console.error('从后端加载排序失败:', error);
+    //   
     //   return loadFromLocalStorage();
     // }
   };
-  
   // 添加从本地存储加载的函数
   const loadFromLocalStorage = (): boolean => {
     if (!clientReady) return false;
-    
     try {
       const savedOrder = localStorage.getItem('sidebar-order');
       if (savedOrder) {
@@ -606,19 +545,14 @@ export function Sidebar({ user }: SidebarProps) {
             };
           });
           setOrderedItems(validatedItems);
-          console.log('成功从本地缓存加载排序');
           return true;
         } catch (e) {
-          console.error('解析本地排序数据失败:', e);
         }
       }
     } catch (error) {
-      console.error('从本地存储加载失败:', error);
     }
-    
     return false;
   };
-  
   // 应用排序到状态的通用函数
   const applyOrderToState = (orderIds: string[]): boolean => {
     try {
@@ -626,44 +560,34 @@ export function Sidebar({ user }: SidebarProps) {
       const orderedItems = orderIds
         .map(id => defaultSidebarItems.find(item => item.id === id))
         .filter(Boolean) as SidebarItem[];
-      
       // 如果有新增的项目（不在保存的ID列表中），添加到末尾
       const missingItems = defaultSidebarItems.filter(
         item => !orderIds.includes(item.id)
       );
-      
       if (missingItems.length > 0) {
         orderedItems.push(...missingItems);
       }
-      
       // 如果结果有效，设置状态
       if (orderedItems.length > 0) {
         setOrderedItems(orderedItems);
-        
         // 同时保存到本地存储作为缓存
         try {
           if (clientReady) {
             localStorage.setItem('sidebar-order', JSON.stringify(orderedItems));
           }
         } catch (error) {
-          console.error('保存排序到localStorage失败:', error);
         }
-        
         return true;
       }
-      
       return false;
     } catch (error) {
-      console.error('应用排序状态失败:', error);
       return false;
     }
   };
-
   // 渲染钉在桌面按钮
   const renderPinButton = () => {
     // 确保环境条件满足
     if (!isElectron || !isAvailable) return null;
-    
     return (
       <PinWindowButton
         variant="outline"
@@ -672,7 +596,6 @@ export function Sidebar({ user }: SidebarProps) {
       />
     );
   };
-
   // 移动端侧边栏
   if (isMobile) {
     return (
@@ -697,13 +620,11 @@ export function Sidebar({ user }: SidebarProps) {
           </Sheet>
           <h1 className="text-base md:text-lg font-semibold truncate">四象限管理系统</h1>
         </div>
-        
         {/* 传递主题按钮引用 */}
         <ThemeSwitcher buttonRef={themeButtonRef} />
       </>
     )
   }
-
   // 桌面端侧边栏
   return (
     <>
@@ -724,10 +645,8 @@ export function Sidebar({ user }: SidebarProps) {
           <SidebarContent />
         </Collapsible.Root>
       </aside>
-      
       {/* 传递主题按钮引用 */}
       <ThemeSwitcher buttonRef={themeButtonRef} />
     </>
   )
 }
-

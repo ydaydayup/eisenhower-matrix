@@ -1,24 +1,21 @@
 import { NextConfig } from 'next'
-
+import path from 'path'
 let userConfig = undefined
 try {
-    // Use dynamic import without await
-    import('./v0-user-next.config').then(config => {
-        userConfig = config.default
-    }).catch(() => {
-        // ignore error
-    })
+    // 使用可选的方式导入配置
+    const userConfigModule = require('./v0-user-next.config');
+    if (userConfigModule && userConfigModule.default) {
+        userConfig = userConfigModule.default;
+    }
 } catch (e) {
-    // ignore error
+    // 如果模块不存在，忽略错误
 }
-
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
     output: 'standalone',
     eslint: {
         ignoreDuringBuilds: true,
     },
-
     typescript: {
         // !! WARN !!
         // Dangerously allow production builds to successfully complete even if
@@ -47,7 +44,20 @@ const nextConfig: NextConfig = {
     },
     webpack: (config, { isServer }) => {
         config.cache = true;
-        
+        // 修复缓存配置
+        if (config.cache === true) {
+            config.cache = {
+                type: 'filesystem',
+                buildDependencies: {
+                    config: [__filename]
+                },
+                cacheDirectory: path.join(process.cwd(), '.next/cache/webpack'),
+                // 增加缓存版本，避免缓存问题
+                version: '1.0.0',
+                // 禁用缓存压缩，避免额外的CPU开销
+                compression: false
+            };
+        }
         if (!isServer && typeof config.optimization.splitChunks === 'object') {
             config.optimization.splitChunks.cacheGroups = {
                 ...config.optimization.splitChunks.cacheGroups,
@@ -59,17 +69,14 @@ const nextConfig: NextConfig = {
                 },
             };
         }
-
         return config;
     },
     serverExternalPackages: ['electron'], // to prevent bundling Electron
 }
-
 function mergeConfig(nextConfig: NextConfig, userConfig: any) {
     if (!userConfig) {
         return
     }
-
     for (const key in userConfig) {
         if (
             typeof nextConfig[key] === 'object' &&
@@ -84,13 +91,9 @@ function mergeConfig(nextConfig: NextConfig, userConfig: any) {
         }
     }
 }
-
 mergeConfig(nextConfig, userConfig)
-
 if (process.env.NODE_ENV === 'development') delete nextConfig.output; // for HMR
-
 export default nextConfig
-
 // const pwaConfig = {
 //   dest: 'public',
 //   register: true,
@@ -122,4 +125,3 @@ export default nextConfig
 //     }
 //   ]
 // }
-

@@ -3,9 +3,6 @@ import {Sidebar} from "@/components/sidebar"
 import {redirect} from "next/navigation"
 import {createNextServerClient} from "@/lib/supabase/server"
 import PWAInstallButton from "@/components/pwa-install-button"
-
-
-
 export default async function DashboardLayout({
                                                   children,
                                               }: {
@@ -13,32 +10,23 @@ export default async function DashboardLayout({
 }) {
     // 生产环境正常流程：使用服务器端 Supabase 客户端
     const supabase = await createNextServerClient()
-
     // 获取会话
     const {
         data: {session},
     } = await supabase.auth.getSession()
-
-
     try {
-
-
         // 如果没有会话，重定向到登录页面
         if (!session) {
             // 使用 redirect 函数重定向到登录页面
-            console.log("[AUTH] 未发现有效会话，重定向到登录页面")
             return redirect("/login")
         }
-
         // 获取用户资料
         const {data: profile} = await supabase.from("profiles").select("name").eq("id", session.user.id).single()
-
         const user = {
             id: session.user.id,
             name: profile?.name || session.user.email?.split("@")[0] || "",
             email: session.user.email || "",
         }
-
         // 正常渲染仪表板布局
         return (
             <div className="flex flex-col md:flex-row h-screen">
@@ -50,9 +38,7 @@ export default async function DashboardLayout({
             </div>
         )
     } catch (error) {
-        console.error("Error in dashboard layout:", error)
         // 发生错误时重定向到登录页面
         return redirect("/login")
     }
 }
-

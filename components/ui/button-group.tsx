@@ -1,8 +1,6 @@
 "use client"
-
 import * as React from "react"
 import { cn } from "@/lib/utils"
-
 const ButtonGroupContext = React.createContext<{
   variant?: "default" | "outline" | "glass" | "pill"
   size?: "default" | "sm" | "lg"
@@ -10,7 +8,6 @@ const ButtonGroupContext = React.createContext<{
   activeIndex?: number
   setActiveIndex?: (index: number) => void
 }>({})
-
 interface ButtonGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "outline" | "glass" | "pill"
   size?: "default" | "sm" | "lg"
@@ -18,7 +15,6 @@ interface ButtonGroupProps extends React.HTMLAttributes<HTMLDivElement> {
   activeIndex?: number
   onActiveIndexChange?: (index: number) => void
 }
-
 const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
   ({ 
     variant = "default", 
@@ -31,9 +27,7 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
     ...props 
   }, ref) => {
     const [internalActiveIndex, setInternalActiveIndex] = React.useState(activeIndex)
-    
     const currentActiveIndex = activeIndex !== undefined ? activeIndex : internalActiveIndex
-    
     const setActiveIndex = React.useCallback((index: number) => {
       if (onActiveIndexChange) {
         onActiveIndexChange(index)
@@ -41,7 +35,6 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
         setInternalActiveIndex(index)
       }
     }, [onActiveIndexChange])
-    
     return (
       <ButtonGroupContext.Provider 
         value={{ 
@@ -80,12 +73,10 @@ const ButtonGroup = React.forwardRef<HTMLDivElement, ButtonGroupProps>(
   }
 )
 ButtonGroup.displayName = "ButtonGroup"
-
 interface ButtonGroupItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   index?: number
   isActive?: boolean
 }
-
 const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps>(
   ({ 
     className, 
@@ -95,7 +86,6 @@ const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps
     ...props 
   }, ref) => {
     const { variant, size, orientation, setActiveIndex } = React.useContext(ButtonGroupContext)
-    
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (props.onClick) {
         props.onClick(e)
@@ -104,7 +94,6 @@ const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps
         setActiveIndex(index)
       }
     }
-    
     return (
       <button
         ref={ref}
@@ -116,10 +105,10 @@ const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps
           variant === "glass" && "rounded-full transform-gpu translate-y-0",
           variant === "pill" && "rounded-full transform-gpu translate-y-0",
           // Active state
-          variant === "default" && isActive && "bg-accent text-accent-foreground",
-          variant === "outline" && isActive && "bg-accent text-accent-foreground",
-          variant === "glass" && isActive && "bg-primary text-primary-foreground shadow",
-          variant === "pill" && isActive && "bg-background shadow-sm",
+          variant === "default" && isActive && "bg-accent text-accent-foreground hover:bg-accent",
+          variant === "outline" && isActive && "bg-accent text-accent-foreground hover:bg-accent",
+          variant === "glass" && isActive && "bg-primary text-primary-foreground shadow hover:bg-primary",
+          variant === "pill" && isActive && "bg-background shadow-sm hover:bg-background",
           // Non-active state
           variant === "glass" && !isActive && "text-muted-foreground hover:text-foreground",
           variant === "pill" && !isActive && "text-muted-foreground hover:text-foreground",
@@ -140,5 +129,4 @@ const ButtonGroupItem = React.forwardRef<HTMLButtonElement, ButtonGroupItemProps
   }
 )
 ButtonGroupItem.displayName = "ButtonGroupItem"
-
 export { ButtonGroup, ButtonGroupItem } 

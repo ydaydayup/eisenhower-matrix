@@ -3,7 +3,6 @@ import { X, Minus, Settings, GripVertical } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Task } from '@/lib/tasks';
-
 // 声明 Electron IPC 接口
 declare global {
   interface Window {
@@ -18,17 +17,14 @@ declare global {
     };
   }
 }
-
 interface FloatingTodoProps {
   initialTasks?: Task[];
 }
-
 const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [opacity, setOpacity] = useState<number>(0.9);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [showSettings, setShowSettings] = useState<boolean>(false);
-
   // 从本地存储加载任务数据
   useEffect(() => {
     try {
@@ -37,34 +33,28 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
         setTasks(JSON.parse(savedTasks));
       }
     } catch (error) {
-      console.error('Failed to load tasks from localStorage', error);
     }
   }, []);
-
   // 保存任务到本地存储
   useEffect(() => {
     if (tasks.length > 0) {
       localStorage.setItem('floatingTasks', JSON.stringify(tasks));
     }
   }, [tasks]);
-
   // 处理拖拽开始
   const handleDragStart = (e: React.MouseEvent) => {
     setIsDragging(true);
-    
     // 使用Electron的原生拖拽API
     if (window.electronAPI && window.electronAPI.startDrag) {
       window.electronAPI.startDrag();
     }
   };
-
   // 切换任务完成状态
   const toggleTaskCompletion = (taskId: string) => {
     setTasks(tasks.map(task => 
       task.id === taskId ? { ...task, completed: !task.completed } : task
     ));
   };
-
   // 处理透明度变化
   const handleOpacityChange = (newOpacity: number) => {
     setOpacity(newOpacity);
@@ -72,28 +62,24 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
       window.electronAPI.setOpacity(newOpacity);
     }
   };
-
   // 关闭窗口
   const handleClose = () => {
     if (window.electronAPI) {
       window.electronAPI.closeFloatingWindow();
     }
   };
-
   // 最小化窗口
   const handleMinimize = () => {
     if (window.electronAPI) {
       window.electronAPI.minimizeFloatingWindow();
     }
   };
-
   // 打开主窗口
   const handleOpenMainWindow = () => {
     if (window.electronAPI) {
       window.electronAPI.openMainWindow();
     }
   };
-
   // 根据任务的紧急性和重要性确定颜色
   const getTaskColor = (quadrant: number) => {
     switch(quadrant) {
@@ -104,7 +90,6 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
       default: return 'bg-gray-100 border-gray-500';
     }
   };
-
   return (
     <div 
       id="floating-window"
@@ -151,7 +136,6 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
           </button>
         </div>
       </div>
-
       {/* 内容区域 */}
       <div 
         className="flex flex-col flex-1 overflow-hidden"
@@ -185,7 +169,6 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
             </div>
           </div>
         )}
-
         {/* 任务列表 */}
         <div 
           className="flex-1 overflow-y-auto p-2 space-y-2"
@@ -216,14 +199,12 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
                     <p className={cn("text-sm", task.completed && "line-through text-gray-500")}>
                       {task.title}
                     </p>
-                    
                     {/* 显示截止日期 */}
                     {task.due_date && (
                       <p className="text-xs text-gray-500 mt-1">
                         {new Date(task.due_date).toLocaleDateString()}
                       </p>
                     )}
-                    
                     {/* 显示标签 */}
                     {task.tags && task.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
@@ -244,5 +225,4 @@ const FloatingTodo: React.FC<FloatingTodoProps> = ({ initialTasks = [] }) => {
     </div>
   );
 };
-
 export default FloatingTodo; 

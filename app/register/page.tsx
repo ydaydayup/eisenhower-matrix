@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
@@ -11,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase/client"
-
 export default function RegisterPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -21,11 +19,9 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-
     if (password !== confirmPassword) {
       setError("两次输入的密码不一致")
       toast({
@@ -35,9 +31,7 @@ export default function RegisterPage() {
       })
       return
     }
-
     setIsLoading(true)
-
     try {
       // 使用单例 Supabase 客户端注册
       const { data, error } = await supabase.auth.signUp({
@@ -51,7 +45,6 @@ export default function RegisterPage() {
           emailConfirmationConstraint: "optional",
         },
       })
-
       if (error) {
         setError(error.message)
         toast({
@@ -62,14 +55,12 @@ export default function RegisterPage() {
         setIsLoading(false)
         return
       }
-
       if (data.user) {
         // 注册成功后自动登录
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
-
         if (loginError) {
           setError(loginError.message)
           toast({
@@ -80,16 +71,13 @@ export default function RegisterPage() {
           setIsLoading(false)
           return
         }
-
         toast({
           title: "注册成功",
           description: "您已成功注册并登录",
         })
-
         router.push("/dashboard")
       }
     } catch (err) {
-      console.error("Registration error:", err)
       setError("注册过程中发生错误，请稍后再试")
       toast({
         title: "注册失败",
@@ -99,7 +87,6 @@ export default function RegisterPage() {
       setIsLoading(false)
     }
   }
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
@@ -166,4 +153,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

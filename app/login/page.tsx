@@ -1,5 +1,4 @@
 "use client"
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -13,7 +12,6 @@ import { useToast } from "@/hooks/use-toast"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff } from "lucide-react"
-
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -29,14 +27,11 @@ export default function LoginPage() {
     try {
       const rememberedEmail = await localStorage.getItem('auth:rememberedEmail');
       if (rememberedEmail) {
-        console.log("填充保存的账号:", rememberedEmail);
         setEmail(rememberedEmail);
       }
     } catch (err) {
-      console.error("无法加载保存的账号:", err);
     }
   };
-
   // 初始化 Supabase 客户端
   useEffect(() => {
     const initSupabase = async () => {
@@ -44,11 +39,9 @@ export default function LoginPage() {
         const client = await getSupabaseClient();
         setSupabaseClient(client);
       } catch (err) {
-        console.error("Failed to initialize Supabase client:", err);
         setError("初始化认证服务失败，请刷新页面重试");
       }
     };
-    
     // 自动填充账号和密码
     const loadRememberedCredentials = async () => {
       try {
@@ -65,25 +58,19 @@ export default function LoginPage() {
           }
         }
       } catch (err) {
-        console.error("无法加载保存的账号密码:", err);
       }
     };
-
     initSupabase();
     loadRememberedCredentials();
   }, []);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!supabaseClient) {
       setError("认证服务尚未初始化，请稍后再试");
       return;
     }
-    
     setIsLoading(true)
     setError(null)
-    
     try {
       // 使用 Supabase 客户端登录
       const { data, error } = await supabaseClient.auth.signInWithPassword({
@@ -94,7 +81,6 @@ export default function LoginPage() {
           expiresIn: rememberMe ? 60 * 60 * 24 * 30 : undefined
         }
       })
-      
       if (error) {
         setError(error.message)
         toast({
@@ -105,7 +91,6 @@ export default function LoginPage() {
         setIsLoading(false)
         return
       }
-      
       if (data.user) {
         try {
           localStorage.setItem('auth:rememberedEmail', email);
@@ -119,22 +104,17 @@ export default function LoginPage() {
             localStorage.removeItem('auth:credentials');
           }
         } catch (err) {
-          console.warn("无法使用localStorage作为备用存储:", err);
         }
-
         toast({
           title: "登录成功",
           description: "欢迎回来！",
         })
-      
         // 确保路由跳转到仪表盘
-        console.log("登录成功，准备跳转到仪表盘");
         setTimeout(() => {
           router.push("/dashboard");
         }, 100); // 添加短暂延时确保状态更新完成
       }
     } catch (err) {
-      console.error("Login error:", err)
       setError("登录过程中发生错误，请稍后再试")
       toast({
         title: "登录失败",
@@ -144,7 +124,6 @@ export default function LoginPage() {
       setIsLoading(false)
     }
   }
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <Card className="w-full max-w-md">
@@ -229,4 +208,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

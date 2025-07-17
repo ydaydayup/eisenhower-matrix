@@ -1,12 +1,9 @@
 "use client";
-
 import React, { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
-
 // 只在客户端导入实际的Quill类
 let QuillInstance: any = null;
 let DeltaInstance: any = null;
-
 // 动态加载Quill和插件
 if (typeof window !== 'undefined') {
   // 动态导入实际的Quill库
@@ -14,49 +11,38 @@ if (typeof window !== 'undefined') {
     QuillInstance = module.default;
     DeltaInstance = module.Delta;
   }).catch(err => {
-    console.error('Quill导入失败:', err);
   });
 }
-
 // 使用dynamic import导入Markdown插件
 const MarkdownShortcuts = dynamic(() => import('quill-markdown-shortcuts'), { 
   ssr: false 
 });
-
 // 为没有类型定义的模块创建声明
 declare module 'quill-markdown-shortcuts';
-
 // 复制CheckboxModule逻辑，适配Quill 2.0
 const CheckboxModule = function(quill: any) {
   // 确保只在客户端执行
   if (typeof document === 'undefined') return;
-  
   quill.container.addEventListener('click', (e: MouseEvent) => {
     const clickTarget = e.target as HTMLElement;
-    
     // 计算点击位置是否在checkbox上
     const isCheckboxClick = clickTarget.className === 'ql-ui' && 
                            clickTarget.innerHTML === '☐'; // 或者其他checkbox识别方式
-    
     // 获取点击的列表项
     const listItem = clickTarget.tagName === 'LI' ?
                      clickTarget :
                      clickTarget.closest('li');
-    
     // 如果点击的是勾选框项目
     if (listItem && listItem.parentElement?.hasAttribute('data-checked')) {
       // 计算点击是否在勾选框上
       const rect = listItem.getBoundingClientRect();
       const offsetLeft = e.clientX - rect.left;
-      
       // 如果点击位置在列表项的左侧（勾选框位置）
       if (offsetLeft < 20) {
         // 切换勾选状态
         const isChecked = listItem.parentElement.getAttribute('data-checked') === 'true';
-        
         // 更新DOM属性
         listItem.parentElement.setAttribute('data-checked', isChecked ? 'false' : 'true');
-        
         // 应用或移除样式
         if (!isChecked) {
           // 勾选时 - 添加样式
@@ -70,35 +56,28 @@ const CheckboxModule = function(quill: any) {
       }
     }
   });
-  
   // 在初始化和内容更改时应用样式
   const applyCheckedStyles = () => {
     if (typeof document === 'undefined' || !quill.container) return;
-    
     const container = quill.container;
     const checkedItems = container.querySelectorAll('ul[data-checked=true] > li');
     const uncheckedItems = container.querySelectorAll('ul[data-checked=false] > li');
-    
     // 应用已选中项的样式
     checkedItems.forEach((item: HTMLElement) => {
       item.style.textDecoration = 'line-through';
       item.style.color = '#6b7280';
     });
-    
     // 移除未选中项的样式
     uncheckedItems.forEach((item: HTMLElement) => {
       item.style.textDecoration = 'none';
       item.style.color = '';
     });
   };
-  
   // 监听文本变化，应用样式
   quill.on('text-change', applyCheckedStyles);
-  
   // 初始加载时应用样式
   setTimeout(applyCheckedStyles, 0);
 };
-
 // 创建一个简单的QuillCSS组件
 export const QuillStyles = () => {
   return (
@@ -109,13 +88,11 @@ export const QuillStyles = () => {
         display: flex;
         flex-direction: column;
       }
-      
       /* 确保编辑器占满可用空间 */
       .ql-container {
         height: calc(100% - 42px); /* 减去工具栏高度 */
         border-color: #e5e7eb;
       }
-      
       .ql-editor {
         min-height: calc(100vh - 15rem); 
         padding: 1.25rem;
@@ -123,11 +100,9 @@ export const QuillStyles = () => {
         line-height: 1.7;
         color: #374151;
       }
-      
       .dark .ql-editor {
         color: #e5e7eb;
       }
-      
       /* Quill 2.0特定样式 */
       .ql-toolbar {
         border-top-left-radius: 0.375rem;
@@ -135,22 +110,18 @@ export const QuillStyles = () => {
         border-color: #e5e7eb;
         background-color: #f9fafb;
       }
-      
       .dark .ql-toolbar {
         background-color: #1e293b;
         border-color: #334155;
       }
-      
       .dark .ql-container {
         border-color: #334155;
       }
-      
       .ql-container {
         border-bottom-left-radius: 0.375rem;
         border-bottom-right-radius: 0.375rem;
         font-family: inherit;
       }
-      
       /* 改进标题样式 */
       .ql-editor h1 {
         font-size: 1.875rem;
@@ -158,28 +129,24 @@ export const QuillStyles = () => {
         margin-top: 1.5rem;
         margin-bottom: 1rem;
       }
-      
       .ql-editor h2 {
         font-size: 1.5rem;
         font-weight: 600;
         margin-top: 1.25rem;
         margin-bottom: 0.75rem;
       }
-      
       .ql-editor h3 {
         font-size: 1.25rem;
         font-weight: 600;
         margin-top: 1rem;
         margin-bottom: 0.5rem;
       }
-      
       .ql-editor h4 {
         font-size: 1.125rem;
         font-weight: 600;
         margin-top: 0.75rem;
         margin-bottom: 0.5rem;
       }
-      
       .ql-editor {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         min-height: 100%;
@@ -188,11 +155,9 @@ export const QuillStyles = () => {
         font-size: 1rem;
         padding: 1.5rem;
       }
-      
       .dark .ql-editor {
         color: #e2e8f0;
       }
-      
       .ql-editor h1 {
         font-size: 1.75rem;
         line-height: 2.25rem;
@@ -200,7 +165,6 @@ export const QuillStyles = () => {
         margin-bottom: 0.5rem;
         font-weight: 600;
       }
-      
       .ql-editor h2 {
         font-size: 1.5rem;
         line-height: 2rem;
@@ -208,7 +172,6 @@ export const QuillStyles = () => {
         margin-bottom: 0.5rem;
         font-weight: 600;
       }
-      
       .ql-editor h3 {
         font-size: 1.25rem;
         line-height: 1.75rem;
@@ -216,7 +179,6 @@ export const QuillStyles = () => {
         margin-bottom: 0.5rem;
         font-weight: 600;
       }
-      
       .ql-toolbar {
         border-bottom: 1px solid #e2e8f0;
         padding: 0.5rem;
@@ -224,22 +186,18 @@ export const QuillStyles = () => {
         flex-wrap: wrap;
         gap: 0.5rem;
       }
-      
       .dark .ql-toolbar {
         border-color: #2d3748;
       }
-      
       /* Obsidian风格的列表连接线 */
       .ql-editor ul, .ql-editor ol {
         position: relative;
         padding-left: 1.5em;
       }
-      
       /* 无序列表样式 */
       .ql-editor ul > li {
         position: relative;
       }
-      
       .ql-editor ul > li::before {
         content: '';
         position: absolute;
@@ -249,15 +207,12 @@ export const QuillStyles = () => {
         width: 1.5px;
         background-color: #e2e8f0;
       }
-      
       .dark .ql-editor ul > li::before {
         background-color: #4a5568;
       }
-      
       .ql-editor ul > li:last-child::before {
         height: 0;
       }
-      
       .ql-editor ul > li::after {
         content: '';
         position: absolute;
@@ -267,16 +222,13 @@ export const QuillStyles = () => {
         height: 1.5px;
         background-color: #e2e8f0;
       }
-      
       .dark .ql-editor ul > li::after {
         background-color: #4a5568;
       }
-      
       /* 有序列表样式 */
       .ql-editor ol > li {
         position: relative;
       }
-      
       .ql-editor ol > li::before {
         content: '';
         position: absolute;
@@ -286,15 +238,12 @@ export const QuillStyles = () => {
         width: 1.5px;
         background-color: #e2e8f0;
       }
-      
       .dark .ql-editor ol > li::before {
         background-color: #4a5568;
       }
-      
       .ql-editor ol > li:last-child::before {
         height: 0;
       }
-      
       .ql-editor ol > li::after {
         content: '';
         position: absolute;
@@ -304,16 +253,13 @@ export const QuillStyles = () => {
         height: 1.5px;
         background-color: #e2e8f0;
       }
-      
       .dark .ql-editor ol > li::after {
         background-color: #4a5568;
       }
-      
       /* 勾选列表样式 */
       .ql-editor ul[data-checked] > li {
         position: relative;
       }
-      
       .ql-editor ul[data-checked] > li::before {
         content: '';
         position: absolute;
@@ -323,15 +269,12 @@ export const QuillStyles = () => {
         width: 1.5px;
         background-color: #e2e8f0;
       }
-      
       .dark .ql-editor ul[data-checked] > li::before {
         background-color: #4a5568;
       }
-      
       .ql-editor ul[data-checked] > li:last-child::before {
         height: 0;
       }
-      
       .ql-editor ul[data-checked] > li::after {
         content: '';
         position: absolute;
@@ -341,11 +284,9 @@ export const QuillStyles = () => {
         height: 1.5px;
         background-color: #e2e8f0;
       }
-      
       .dark .ql-editor ul[data-checked] > li::after {
         background-color: #4a5568;
       }
-      
       /* 已勾选的项目样式 */
       .ql-editor ul[data-checked="true"] > li {
         text-decoration: line-through;
@@ -354,7 +295,6 @@ export const QuillStyles = () => {
     `}</style>
   );
 };
-
 // 自定义Quill编辑器组件
 interface CustomQuillEditorProps {
   value: string;
@@ -364,20 +304,17 @@ interface CustomQuillEditorProps {
   readOnly?: boolean;
   toolbar?: boolean;
 }
-
 interface QuillEditorRef {
   getEditor: () => any | null;
   getEditorContents: () => string;
   focus: () => void;
 }
-
 // 定义标题项的类型
 interface Heading {
   id: string;
   text: string;
   level: number;
 }
-
 // 在客户端初始化时动态加载CSS和插件
 const useQuillDeps = () => {
   useEffect(() => {
@@ -385,30 +322,24 @@ const useQuillDeps = () => {
       try {
         // 使用require加载CSS
         require('quill/dist/quill.snow.css');
-        
         // 动态加载Markdown插件
         import('quill-markdown-shortcuts').catch(err => 
-          console.error('加载Markdown插件失败:', err)
         );
       } catch (e) {
-        console.error('加载Quill依赖失败:', e);
       }
     }
   }, []);
 };
-
 const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
   ({ value, onChange, placeholder = '开始编辑备忘录...', className = '', readOnly = false, toolbar = true }, ref) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const quillRef = useRef<any | null>(null);
     const isInitializedRef = useRef(false);
     const [isMounted, setIsMounted] = useState(false);
-    
     // 确保组件挂载后再执行DOM操作
     useEffect(() => {
       setIsMounted(true);
     }, []);
-    
     // 将Quill实例方法暴露给父组件
     useImperativeHandle(ref, () => ({
       getEditor: () => quillRef.current,
@@ -421,17 +352,14 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
         }
       }
     }), [isMounted]);
-    
     // 初始化Quill编辑器
     useEffect(() => {
       // 确保在客户端环境，Quill库已加载，DOM已准备好，且还未初始化
       if (!isMounted || typeof window === 'undefined' || !QuillInstance || !editorRef.current || isInitializedRef.current) return;
-      
       try {
         // 异步加载Markdown插件
         import('quill-markdown-shortcuts').then((MarkdownModule) => {
           const MarkdownShortcuts = MarkdownModule.default;
-          
           // 通过Quill.register注册插件
           if (QuillInstance && typeof QuillInstance.register === 'function') {
             // 注册Markdown模块
@@ -439,19 +367,15 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
             // 注册复选框模块
             QuillInstance.register('modules/checkbox', CheckboxModule);
           }
-          
           // 初始化编辑器配置
           initializeEditor();
         }).catch(error => {
-          console.error('加载Markdown插件失败，继续初始化编辑器:', error);
           // 即使没有Markdown插件也初始化编辑器
           initializeEditor();
         });
-        
         // 初始化编辑器的函数
         function initializeEditor() {
           if (!QuillInstance || !editorRef.current || isInitializedRef.current) return;
-          
           // 配置Quill工具栏
           const modules = {
             toolbar: toolbar ? {
@@ -472,7 +396,6 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
             markdownShortcuts: {},
             checkbox: true
           };
-          
           // 创建Quill 2.0实例
           quillRef.current = new QuillInstance(editorRef.current, {
             modules,
@@ -480,47 +403,38 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
             theme: 'snow',
             readOnly
           });
-          
           // 设置初始内容
           if (value) {
             quillRef.current.clipboard.dangerouslyPasteHTML(value);
           }
-          
           // 监听内容变化
           quillRef.current.on('text-change', () => {
             if (quillRef.current) {
               onChange(quillRef.current.root.innerHTML);
             }
           });
-          
           // 应用自定义样式和翻译
           applyCustomStyles();
-          
           isInitializedRef.current = true;
         }
       } catch (error) {
-        console.error('初始化编辑器失败:', error);
       }
     }, [value, onChange, placeholder, isMounted, readOnly, toolbar]);
-    
     // 应用自定义样式函数
     const applyCustomStyles = () => {
       if (!quillRef.current || typeof document === 'undefined') return;
-      
       try {
         // 移除编辑器内嵌边框
         const editorElement = editorRef.current?.querySelector('.ql-editor');
         if (editorElement) {
           (editorElement as HTMLElement).style.border = 'none';
         }
-        
         // 自定义工具栏翻译
         const toolbarEl = editorRef.current?.querySelector('.ql-toolbar');
         if (toolbarEl) {
           // 添加工具提示
           const buttons = toolbarEl.querySelectorAll('button');
           const selects = toolbarEl.querySelectorAll('select');
-          
           // 给按钮添加中文提示和显示
           buttons.forEach(button => {
             if (button.className.includes('ql-bold')) {
@@ -562,7 +476,6 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               button.innerHTML = '清除';
             }
           });
-          
           // 辅助函数：为按钮添加可视化提示
           function addTooltipSpan(buttonElement: Element, text: string) {
             // 检查是否已添加提示，避免重复
@@ -572,7 +485,6 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               tooltipSpan.textContent = text;
               tooltipSpan.style.display = 'none';
               buttonElement.appendChild(tooltipSpan);
-              
               // 显示提示的hover效果
               buttonElement.addEventListener('mouseover', () => {
                 tooltipSpan.style.display = 'block';
@@ -588,13 +500,11 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
                 tooltipSpan.style.marginBottom = '5px';
                 tooltipSpan.style.zIndex = '1000';
               });
-              
               buttonElement.addEventListener('mouseout', () => {
                 tooltipSpan.style.display = 'none';
               });
             }
           }
-          
           // 给下拉菜单添加中文提示
           selects.forEach(select => {
             if (select.className.includes('ql-header')) {
@@ -610,10 +520,8 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               labelSpan.style.fontSize = '13px';
               labelSpan.style.color = '#444';
               select.parentElement?.appendChild(labelSpan);
-              
               // 调整选择框样式，为标签腾出空间
               select.style.paddingLeft = '40px';
-              
               // 翻译下拉选项
               const headerOptions = select.querySelectorAll('option');
               headerOptions.forEach(option => {
@@ -638,10 +546,8 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               labelSpan.style.fontSize = '13px';
               labelSpan.style.color = '#444';
               select.parentElement?.appendChild(labelSpan);
-              
               // 调整选择框样式
               select.style.paddingLeft = '40px';
-              
               // 翻译字体选项
               const fontOptions = select.querySelectorAll('option');
               fontOptions.forEach(option => {
@@ -662,10 +568,8 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               labelSpan.style.fontSize = '13px';
               labelSpan.style.color = '#444';
               select.parentElement?.appendChild(labelSpan);
-              
               // 调整选择框样式
               select.style.paddingLeft = '40px';
-              
               // 翻译字号选项
               const sizeOptions = select.querySelectorAll('option');
               sizeOptions.forEach(option => {
@@ -687,10 +591,8 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               labelSpan.style.fontSize = '13px';
               labelSpan.style.color = '#444';
               select.parentElement?.appendChild(labelSpan);
-              
               // 调整选择框样式
               select.style.paddingLeft = '40px';
-              
               // 翻译对齐选项
               const alignOptions = select.querySelectorAll('option');
               alignOptions.forEach(option => {
@@ -723,7 +625,6 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               select.parentElement?.appendChild(labelSpan);
             }
           });
-          
           // 翻译列表按钮
           const listButtons = toolbarEl.querySelectorAll('.ql-list');
           listButtons.forEach(button => {
@@ -742,7 +643,6 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               button.innerHTML = '☑';
             }
           });
-          
           // 翻译缩进按钮
           const indentButtons = toolbarEl.querySelectorAll('.ql-indent');
           indentButtons.forEach(button => {
@@ -758,7 +658,6 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
               button.innerHTML = '→';
             }
           });
-          
           // 给颜色选择器添加提示
           const colorButtons = toolbarEl.querySelectorAll('.ql-color, .ql-background');
           colorButtons.forEach(button => {
@@ -772,18 +671,14 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
           });
         }
       } catch (error) {
-        console.error('应用自定义样式失败:', error);
       }
     };
-    
     // 加载依赖
     useQuillDeps();
-    
     // 如果还没挂载，显示占位内容
     if (!isMounted) {
       return <div className={`${className} border rounded-md p-4`}>编辑器加载中...</div>;
     }
-    
     return (
       <>
         <QuillStyles />
@@ -794,21 +689,17 @@ const CustomQuillEditor = forwardRef<QuillEditorRef, CustomQuillEditorProps>(
     );
   }
 );
-
 CustomQuillEditor.displayName = 'CustomQuillEditor';
-
 // 定义QuillEditor组件
 interface QuillEditorProps {
   content: string;
   onChange: (content: string) => void;
   onHeadingsExtracted?: (headings: Heading[]) => void;
 }
-
 export const QuillEditor = forwardRef<QuillEditorRef, QuillEditorProps>(
   ({ content, onChange, onHeadingsExtracted }, ref) => {
     const internalQuillEditorRef = useRef<QuillEditorRef>(null);
     const [isMounted, setIsMounted] = useState(false);
-    
     // 合并内部ref和外部传入的ref
     useImperativeHandle(ref, () => ({
       getEditor: () => internalQuillEditorRef.current?.getEditor() || null,
@@ -819,60 +710,47 @@ export const QuillEditor = forwardRef<QuillEditorRef, QuillEditorProps>(
         }
       }
     }), [internalQuillEditorRef]);
-    
     // 确保组件挂载后再执行DOM操作
     useEffect(() => {
       setIsMounted(true);
     }, []);
-    
     // 提取标题
     useEffect(() => {
       if (!isMounted || !internalQuillEditorRef.current || typeof window === 'undefined') return;
-      
       const extractHeadings = () => {
         if (typeof window === 'undefined' || !internalQuillEditorRef.current) return;
-        
         const editor = internalQuillEditorRef.current?.getEditor();
         if (!editor) return;
-        
         try {
           const content = editor.root.innerHTML;
           // 创建一个临时元素来解析HTML
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = content;
-          
           const headings: Heading[] = [];
           const headingElements = tempDiv.querySelectorAll('h1, h2, h3, h4');
-          
           headingElements.forEach((el, index) => {
             const level = parseInt(el.tagName.substring(1), 10);
             const id = `heading-${index}`;
-            
             headings.push({
               id,
               text: el.textContent || '',
               level
             });
           });
-          
           if (onHeadingsExtracted) {
             onHeadingsExtracted(headings);
           }
         } catch (error) {
-          console.error('提取标题失败:', error);
         }
       };
-      
       // 延迟提取以确保内容已经渲染
       const timer = setTimeout(extractHeadings, 100);
       return () => clearTimeout(timer);
     }, [content, onHeadingsExtracted, isMounted]);
-    
     // 如果还没挂载，显示占位内容
     if (!isMounted) {
       return <div className="min-h-[calc(100vh-15rem)] border rounded-md p-4">编辑器加载中...</div>;
     }
-    
     return (
       <CustomQuillEditor
         ref={internalQuillEditorRef}
@@ -883,5 +761,4 @@ export const QuillEditor = forwardRef<QuillEditorRef, QuillEditorProps>(
     );
   }
 ); 
-
 QuillEditor.displayName = 'QuillEditor'; 
