@@ -107,6 +107,13 @@ pnpm dev
 pnpm start:electron
 ```
 
+6. **容器启动**
+
+```bash
+# 构建并启动
+sudo docker-compose build && sudo docker-compose up -d
+```
+
 ## 📁 项目结构
 
 ```
