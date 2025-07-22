@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI提效 - 智能任务管理与效率提升工具</title>
+    <meta name="description" content="基于艾森豪威尔矩阵的智能任务管理工具，集成AI分析，提升工作和生活效率">
+    <meta name="keywords" content="任务管理,效率工具,AI助手,艾森豪威尔矩阵,时间管理">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="../public/icons/icon.ico">
+    <link rel="apple-touch-icon" href="../public/icons/icon-192x192.png">
+    
+    <!-- CSS -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        
+        .logo img {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 30px;
+        }
+        
+        .nav-menu a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-menu a:hover {
+            color: #2563eb;
+        }
+        
+        .download-btn {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+        
+        /* 主要内容区域 */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 120px 0 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #fff, #e0e7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #2563eb;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            padding: 13px 28px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn-secondary:hover {
+            background: white;
+            color: #2563eb;
+        }
+        
+        /* 功能特性区域 */
+        .features {
+            padding: 100px 0;
+            background: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+        }
+        
+        .section-title p {
+            font-size: 1.2rem;
+            color: #64748b;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        /* 确保功能卡片在大屏幕上最多显示4列 */
+        @media (min-width: 1200px) {
+            .features-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 30px;
+            }
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 35px 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .feature-card h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            flex-grow: 1;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .nav-container {
+                padding: 0 15px;
+            }
+
+            .hero {
+                padding: 100px 0 60px;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .features {
+                padding: 60px 0;
+            }
+
+            .screenshots {
+                padding: 60px 0;
+            }
+
+            .screenshot-gallery {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .download {
+                padding: 60px 0;
+            }
+
+            .download-options {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                max-width: 400px;
+            }
+
+            .web-card::before {
+                top: -8px;
+                right: 15px;
+                font-size: 0.7rem;
+                padding: 3px 10px;
+            }
+
+
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                text-align: center;
+            }
+
+            .system-requirements {
+                padding: 20px;
+                margin: 0 15px;
+            }
+
+            .container {
+                padding: 0 15px;
+            }
+
+            .section-title h2 {
+                font-size: 2rem;
+            }
+
+            .section-title p {
+                font-size: 1.1rem;
+            }
+
+            /* 联系我们浮窗移动端适配 */
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+                max-height: fit-content;
+                overflow: visible;
+            }
+
+            .modal-header {
+                padding: 25px 20px 20px;
+            }
+
+            .modal-header h3 {
+                font-size: 1.4rem;
+            }
+
+            .modal-body {
+                padding: 25px 20px;
+            }
+
+            .contact-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .contact-icon {
+                margin: 0 auto;
+                width: 50px;
+                height: 50px;
+                font-size: 1.6rem;
+            }
+
+            .contact-details h4 {
+                font-size: 1.2rem;
+                justify-content: center;
+            }
+
+            .qq-number {
+                font-size: 1.3rem !important;
+            }
+
+            .qr-code-section {
+                padding: 25px 15px;
+            }
+
+            .qr-code-placeholder {
+                width: 220px;
+                height: 220px;
+            }
+
+            .qr-code-image {
+                width: 220px;
+                height: 220px;
+            }
+
+            .copy-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+
+            .toast-message {
+                bottom: 20px;
+                padding: 12px 20px;
+                font-size: 0.9rem;
+                max-width: 90%;
+            }
+
+            /* 小屏手机二维码优化 */
+            .qr-code-placeholder {
+                width: 180px;
+                height: 180px;
+            }
+
+            .qr-code-image {
+                width: 180px;
+                height: 180px;
+            }
+
+            .qr-icon {
+                font-size: 3rem;
+            }
+
+            .qr-placeholder-content p {
+                font-size: 1.1rem;
+            }
+
+            .qr-placeholder-content small {
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .btn-primary, .btn-secondary {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+
+            .feature-card {
+                padding: 30px 20px;
+            }
+
+            .download-card {
+                padding: 30px 20px;
+            }
+
+            .section-title h2 {
+                font-size: 1.8rem;
+            }
+
+            .download-content h2 {
+                font-size: 2rem;
+            }
+
+            /* 联系我们浮窗移动端适配 */
+            .modal-content {
+                width: 95%;
+                margin: 20px;
+            }
+
+            .modal-header {
+                padding: 20px 20px 15px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .contact-item {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .contact-icon {
+                margin: 0 auto;
+            }
+
+            .qr-code-placeholder {
+                width: 120px;
+                height: 120px;
+            }
+        }
+
+        /* 高分辨率屏幕优化 */
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1400px;
+            }
+
+            .hero h1 {
+                font-size: 4rem;
+            }
+
+            .hero p {
+                font-size: 1.4rem;
+            }
+        }
+
+        /* 打印样式 */
+        @media print {
+            .navbar, .download, .footer {
+                display: none;
+            }
+
+            .hero {
+                background: white;
+                color: black;
+                padding: 20px 0;
+            }
+
+            .features {
+                background: white;
+            }
+
+            .feature-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+        }
+
+        /* 深色模式支持 */
+        @media (prefers-color-scheme: dark) {
+            .navbar {
+                background: rgba(30, 41, 59, 0.95);
+                border-bottom-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-menu a {
+                color: #e2e8f0;
+            }
+
+            .nav-menu a:hover {
+                color: #60a5fa;
+            }
+
+            .features {
+                background: #0f172a;
+            }
+
+            .feature-card {
+                background: #1e293b;
+                color: #e2e8f0;
+            }
+
+            .feature-card h3 {
+                color: #f1f5f9;
+            }
+
+            .feature-card p {
+                color: #94a3b8;
+            }
+
+            .screenshots {
+                background: #0f172a;
+            }
+
+
+
+            .tech-item p {
+                color: #94a3b8;
+            }
+
+            .section-title h2 {
+                color: #f1f5f9;
+            }
+
+            .section-title p {
+                color: #94a3b8;
+            }
+        }
+
+        /* 减少动画效果（用户偏好） */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .scroll-reveal {
+                opacity: 1;
+                transform: none;
+            }
+        }
+        
+        /* 动画效果 */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        /* 滚动效果 */
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+        
+        .scroll-reveal.revealed {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 产品截图样式 */
+        .screenshots {
+            padding: 100px 0;
+            background: white;
+        }
+
+        .screenshot-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 60px;
+        }
+
+        .screenshot-item {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+        }
+
+        .screenshot-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .screenshot-caption {
+            padding: 20px;
+            text-align: center;
+            background: white;
+        }
+
+        .screenshot-caption h4 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .screenshot-caption p {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* 占位符样式（当图片加载失败时显示） */
+        .screenshot-placeholder {
+            height: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .placeholder-content h4 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        /* 下载区域样式 */
+        .download {
+            padding: 100px 0;
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white;
+        }
+
+        .download-content {
+            text-align: center;
+        }
+
+        .download-content h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .download-content > p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 50px;
+        }
+
+        .download-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .download-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .download-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .platform-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .download-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .download-card p {
+            opacity: 0.8;
+            margin-bottom: 25px;
+        }
+
+        .download-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            color: #1e293b;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .download-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+
+
+        .file-info {
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .system-requirements {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: left;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .system-requirements h4 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .system-requirements ul {
+            list-style: none;
+        }
+
+        .system-requirements li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .system-requirements li:last-child {
+            border-bottom: none;
+        }
+
+
+
+        /* 页脚样式 */
+        .footer {
+            background: #1e293b;
+            color: white;
+            padding: 60px 0 30px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .footer-logo img {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+        }
+
+        .footer-logo span {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .footer-section h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #e2e8f0;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section ul li a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section ul li a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #334155;
+            padding-top: 30px;
+            text-align: center;
+            color: #94a3b8;
+        }
+
+        .footer-bottom p {
+            margin-bottom: 5px;
+        }
+
+        /* 联系我们浮窗样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 24px;
+            max-width: 600px;
+            width: 92%;
+            max-height: fit-content;
+            overflow: visible;
+            box-shadow:
+                0 25px 80px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.8);
+            transform: translateY(40px) scale(0.85);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .modal-header {
+            padding: 30px 35px 25px;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 24px 24px 0 0;
+            position: relative;
+        }
+
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .modal-header h3 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-header h3::before {
+            content: '💬';
+            font-size: 1.4rem;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 35px;
+            background: white;
+            border-radius: 0 0 24px 24px;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 25px;
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 18px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.02) 0%, rgba(59, 130, 246, 0.02) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .contact-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: rgba(37, 99, 235, 0.2);
+        }
+
+        .contact-item:hover::before {
+            opacity: 1;
+        }
+
+        .contact-icon {
+            font-size: 1.8rem;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .contact-details {
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+
+        .contact-details h4 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .contact-details p {
+            color: #64748b;
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+        }
+
+        .qq-number {
+            font-size: 1.5rem !important;
+            font-weight: 700 !important;
+            color: #667eea !important;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+        }
+
+        .copy-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .copy-btn:hover::before {
+            left: 100%;
+        }
+
+        .copy-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .qr-code-section {
+            text-align: center;
+            padding: 35px 25px;
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            position: relative;
+            overflow: hidden;
+            margin: 30px 0;
+        }
+
+        .qr-code-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%);
+        }
+
+        .qr-code-section h4 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 20px 0;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .qr-code-section h4::before {
+            content: '📱';
+            font-size: 1.2rem;
+        }
+
+        .qr-code-placeholder {
+            width: 260px;
+            height: 260px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            border: 4px solid white;
+        }
+
+        .qr-code-placeholder:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(102, 126, 234, 0.4);
+        }
+
+        .qr-placeholder-content {
+            text-align: center;
+        }
+
+        .qr-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        .qr-placeholder-content p {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+
+        .qr-placeholder-content small {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .qr-code-image {
+            width: 260px;
+            height: 260px;
+            border-radius: 24px;
+            border: 4px solid white;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .qr-code-image:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        /* 二维码点击提示 */
+        .qr-click-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .qr-code-placeholder:hover .qr-click-hint,
+        .qr-code-image:hover + .qr-click-hint {
+            opacity: 1;
+        }
+
+        .qr-tips {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #64748b;
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <img src="../public/icons/icon-192x192.png" alt="AI提效">
+                AI提效
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#features">功能特性</a></li>
+                <li><a href="#download">下载</a></li>
+                <!-- <li><a href="#about">关于我们</a></li> -->
+                <!-- <li><a href="#support">技术支持</a></li> -->
+            </ul>
+            <a href="#download" class="download-btn">立即下载</a>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <section class="hero">
+        <div class="hero-content fade-in-up">
+            <h1>AI提效</h1>
+            <p>基于艾森豪威尔矩阵的智能任务管理工具<br>让AI助您科学规划，高效执行</p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn-primary">
+                    <span>🚀</span>
+                    免费使用
+                </a>
+                <a href="#features" class="btn-secondary">了解更多</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 功能特性 -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-title scroll-reveal">
+                <h2>强大功能，助力高效</h2>
+                <p>集成人工智能的任务管理系统，让每一分钟都更有价值</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">🧠</div>
+                    <h3>AI智能分析</h3>
+                    <p>基于Moonshot AI的任务分析，自动生成执行计划、风险评估和时间建议，让任务规划更科学</p>
+                </div>
+                
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">📊</div>
+                    <h3>艾森豪威尔矩阵</h3>
+                    <p>科学的四象限任务分类法，帮您区分重要紧急程度，优化时间分配，提升工作效率</p>
+                </div>
+                
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">📅</div>
+                    <h3>智能日历</h3>
+                    <p>可视化的任务时间管理，支持月视图和日视图，直观展示任务分布，合理安排时间</p>
+                </div>
+                
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">📝</div>
+                    <h3>富文本笔记</h3>
+                    <p>支持Markdown语法的高级编辑器，实时保存，全文搜索，让知识管理更高效</p>
+                </div>
+                
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">🔄</div>
+                    <h3>云端同步</h3>
+                    <p>实时数据同步，多设备无缝切换，数据安全可靠</p>
+                </div>
+                
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">📈</div>
+                    <h3>数据统计</h3>
+                    <p>可视化的效率分析报告，任务完成率统计，帮您持续优化工作方式</p>
+                </div>
+
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">⏰</div>
+                    <h3>系统定时通知提醒</h3>
+                    <p>智能的任务提醒系统，支持自定义提醒时间，确保重要任务不被遗忘，提升执行效率</p>
+                </div>
+
+                <div class="feature-card scroll-reveal">
+                    <div class="feature-icon">📌</div>
+                    <h3>桌面置顶功能</h3>
+                    <p>一键置顶应用窗口，始终保持在桌面最前端，方便随时查看和管理任务，提升工作专注度</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 产品截图展示 -->
+    <section class="screenshots" id="screenshots">
+        <div class="container">
+            <div class="section-title scroll-reveal">
+                <h2>产品界面预览</h2>
+                <p>简洁美观的界面设计，带来极致的使用体验</p>
+            </div>
+
+            <div class="screenshot-gallery">
+                <div class="screenshot-item scroll-reveal">
+                    <img src="assets/screenshots/dashboard.png" alt="AI提效主界面 - 艾森豪威尔矩阵视图" loading="lazy">
+                    <div class="screenshot-caption">
+                        <h4>🏠 主界面</h4>
+                        <p>艾森豪威尔矩阵视图</p>
+                    </div>
+                </div>
+                <div class="screenshot-item scroll-reveal">
+                    <img src="assets/screenshots/calendar.png" alt="AI提效日历视图 - 时间管理界面" loading="lazy">
+                    <div class="screenshot-caption">
+                        <h4>📅 日历视图</h4>
+                        <p>时间管理一目了然</p>
+                    </div>
+                </div>
+                <div class="screenshot-item scroll-reveal">
+                    <img src="assets/screenshots/ai-analysis.png" alt="AI提效智能分析 - AI任务规划" loading="lazy">
+                    <div class="screenshot-caption">
+                        <h4>🤖 AI分析</h4>
+                        <p>智能任务规划建议</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 下载区域 -->
+    <section class="download" id="download">
+        <div class="container">
+            <div class="download-content scroll-reveal">
+                <h2>立即下载 AI提效</h2>
+                <p>支持 Windows、macOS、Linux 多平台</p>
+
+                <div class="download-options">
+                    <div class="download-card">
+                        <div class="platform-icon">🌐</div>
+                        <h3>Web 在线版</h3>
+                        <p>无需下载，立即使用</p>
+                        <a href="https://www.dbsx.site/login" target="_blank" class="download-link">
+                            <span>🚀</span>
+                            立即使用
+                        </a>
+                        <div class="file-info">
+                            <small>支持所有现代浏览器</small>
+                        </div>
+                    </div>
+
+                    <div class="download-card">
+                        <div class="platform-icon">🪟</div>
+                        <h3>Windows</h3>
+                        <p>支持 Windows 10/11</p>
+                        <a href="#" class="download-link" onclick="downloadApp('windows')">
+                            <span>📥</span>
+                            下载 Windows 版
+                        </a>
+                        <div class="file-info">
+                            <small>版本 1.0.0 | 约 150MB</small>
+                        </div>
+                    </div>
+
+                    <div class="download-card">
+                        <div class="platform-icon">🍎</div>
+                        <h3>macOS</h3>
+                        <p>支持 macOS 10.15+</p>
+                        <a href="#" class="download-link" onclick="downloadApp('macos')">
+                            <span>📥</span>
+                            下载 macOS 版
+                        </a>
+                        <div class="file-info">
+                            <small>版本 1.0.0 | 约 140MB</small>
+                        </div>
+                    </div>
+
+                    <div class="download-card">
+                        <div class="platform-icon">🐧</div>
+                        <h3>Linux</h3>
+                        <p>支持 Ubuntu/Debian</p>
+                        <a href="#" class="download-link" onclick="downloadApp('linux')">
+                            <span>📥</span>
+                            下载 Linux 版
+                        </a>
+                        <div class="file-info">
+                            <small>版本 1.0.0 | 约 145MB</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="system-requirements">
+                    <h4>系统要求</h4>
+                    <ul>
+                        <li><strong>Windows:</strong> Windows 10 (1903) 或更高版本</li>
+                        <li><strong>macOS:</strong> macOS 10.15 (Catalina) 或更高版本</li>
+                        <li><strong>Linux:</strong> Ubuntu 18.04+ / Debian 10+ 或同等发行版</li>
+                        <li><strong>内存:</strong> 最少 4GB RAM，推荐 8GB 或更多</li>
+                        <li><strong>存储:</strong> 至少 500MB 可用空间</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="../public/icons/icon-192x192.png" alt="AI提效">
+                        <span>AI提效</span>
+                    </div>
+                    <p>智能任务管理，让效率提升看得见</p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>产品</h4>
+                    <ul>
+                        <li><a href="#features">功能特性</a></li>
+                        <li><a href="#download">下载应用</a></li>
+                        <li><a href="#screenshots">界面预览</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>支持</h4>
+                    <ul>
+                        <!-- <li><a href="#help">使用帮助</a></li> -->
+                        <li><a href="#contact" onclick="openContactModal(); return false;">联系我们</a></li>
+                        <!-- <li><a href="#feedback">意见反馈</a></li> -->
+                    </ul>
+                </div>
+
+                <!-- <div class="footer-section">
+                    <h4>关于</h4>
+                    <ul>
+                        <li><a href="#about">关于我们</a></li>
+                        <li><a href="#privacy">隐私政策</a></li>
+                        <li><a href="#terms">服务条款</a></li>
+                    </ul>
+                </div> -->
+            </div>
+
+            <div class="footer-bottom">
+                <!-- <p>&copy; 2025 AI提效. 保留所有权利.</p>
+                <p>联系邮箱: 707495862@qq.com</p> -->
+            </div>
+        </div>
+    </footer>
+
+    <!-- 联系我们浮窗 -->
+    <div id="contactModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>联系我们</h3>
+                <button class="modal-close" onclick="closeContactModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <!-- <div class="contact-icon">👥</div> -->
+                        <div class="contact-details">
+                            <h4>🎯 QQ交流群</h4>
+                            <p class="qq-number">1057464388</p>
+                            <button class="copy-btn" onclick="copyQQNumber()">
+                                <span>📋</span> 复制群号
+                            </button>
+                        </div>
+                    </div>
+<!-- 
+                    <div class="qr-code-section">
+                        <h4>扫码加群</h4>
+                        <div style="position: relative; display: inline-block;">
+                            <div class="qr-code-placeholder" onclick="enlargeQRCode(this)">
+                                <div class="qr-placeholder-content">
+                                    <div class="qr-icon">📱</div>
+                                    <p>QQ群二维码</p>
+                                    <small>点击放大查看</small>
+                                </div>
+                                <div class="qr-click-hint">点击放大</div>
+                            </div>
+                            如果有真实二维码图片，可以替换为： -->
+                            <!-- <img src="assets/images/qq-group-qr.png" alt="QQ群二维码" class="qr-code-image" onclick="enlargeQRCode(this)" style="display: none;">
+                            <div class="qr-click-hint">点击放大</div>
+                        </div>
+                        <div class="qr-tips">
+                            💡 使用手机QQ扫描二维码即可快速加入交流群<br>
+                            <small>点击二维码可以放大查看，方便扫码</small>
+                        </div>
+                    </div> -->
+
+                    <div class="contact-item">
+                        <!-- <div class="contact-icon">📧</div> -->
+                        <div class="contact-details">
+                            <h4>✉️ 邮箱联系</h4>
+                            <p>707495862@qq.com</p>
+                            <button class="copy-btn" onclick="copyEmail()">
+                                <span>📋</span> 复制邮箱
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 滚动显示动画
+        function revealOnScroll() {
+            const reveals = document.querySelectorAll('.scroll-reveal');
+
+            reveals.forEach(element => {
+                const windowHeight = window.innerHeight;
+                const elementTop = element.getBoundingClientRect().top;
+                const elementVisible = 150;
+
+                if (elementTop < windowHeight - elementVisible) {
+                    element.classList.add('revealed');
+                }
+            });
+        }
+
+        // 平滑滚动
+        function smoothScroll() {
+            const links = document.querySelectorAll('a[href^="#"]');
+
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+
+                    if (targetSection) {
+                        const offsetTop = targetSection.offsetTop - 70; // 考虑导航栏高度
+
+                        window.scrollTo({
+                            top: offsetTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        }
+
+        // 导航栏滚动效果
+        function navbarScroll() {
+            const navbar = document.querySelector('.navbar');
+
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+                    navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+                } else {
+                    navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                    navbar.style.boxShadow = 'none';
+                }
+            });
+        }
+
+        // 下载功能
+        function downloadApp(platform) {
+            // 这里可以添加实际的下载逻辑
+            const downloadUrls = {
+                windows: '#', // 实际的Windows下载链接
+                macos: '#',   // 实际的macOS下载链接
+                linux: '#'   // 实际的Linux下载链接
+            };
+
+            // 显示下载提示
+            const platformNames = {
+                windows: 'Windows',
+                macos: 'macOS',
+                linux: 'Linux'
+            };
+
+            alert(`正在准备下载 ${platformNames[platform]} 版本...`);
+
+            // 统计下载次数（可以发送到分析服务）
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'download', {
+                    'event_category': 'engagement',
+                    'event_label': platform
+                });
+            }
+
+            // 实际下载逻辑
+            // window.location.href = downloadUrls[platform];
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化滚动显示
+            revealOnScroll();
+            window.addEventListener('scroll', revealOnScroll);
+
+            // 初始化平滑滚动
+            smoothScroll();
+
+            // 初始化导航栏效果
+            navbarScroll();
+
+            // 添加页面加载动画
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease';
+
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+
+        // 移动端菜单切换（如果需要）
+        function toggleMobileMenu() {
+            const navMenu = document.querySelector('.nav-menu');
+            navMenu.classList.toggle('active');
+        }
+
+        // 性能优化：节流函数
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            }
+        }
+
+        // 优化滚动性能
+        window.addEventListener('scroll', throttle(revealOnScroll, 100));
+
+        // 添加键盘导航支持
+        document.addEventListener('keydown', function(e) {
+            // ESC键关闭任何打开的模态框
+            if (e.key === 'Escape') {
+                // 关闭模态框的逻辑
+            }
+
+            // 回车键激活焦点元素
+            if (e.key === 'Enter' && document.activeElement.tagName === 'A') {
+                document.activeElement.click();
+            }
+        });
+
+        // 添加无障碍支持
+        function addAccessibilityFeatures() {
+            // 为所有交互元素添加焦点样式
+            const interactiveElements = document.querySelectorAll('a, button, [tabindex]');
+
+            interactiveElements.forEach(element => {
+                element.addEventListener('focus', function() {
+                    this.style.outline = '2px solid #2563eb';
+                    this.style.outlineOffset = '2px';
+                });
+
+                element.addEventListener('blur', function() {
+                    this.style.outline = 'none';
+                });
+            });
+        }
+
+        // 初始化无障碍功能
+        addAccessibilityFeatures();
+
+        // 联系我们浮窗功能
+        function openContactModal() {
+            const modal = document.getElementById('contactModal');
+            modal.classList.add('active');
+
+            // 阻止背景滚动
+            document.body.style.overflow = 'hidden';
+
+            // 添加ESC键关闭功能
+            document.addEventListener('keydown', handleEscKey);
+
+            // 添加点击背景关闭功能
+            modal.addEventListener('click', handleBackgroundClick);
+        }
+
+        function closeContactModal() {
+            const modal = document.getElementById('contactModal');
+            modal.classList.remove('active');
+
+            // 恢复背景滚动
+            document.body.style.overflow = '';
+
+            // 移除事件监听器
+            document.removeEventListener('keydown', handleEscKey);
+            modal.removeEventListener('click', handleBackgroundClick);
+        }
+
+        function handleEscKey(e) {
+            if (e.key === 'Escape') {
+                closeContactModal();
+            }
+        }
+
+        function handleBackgroundClick(e) {
+            if (e.target === document.getElementById('contactModal')) {
+                closeContactModal();
+            }
+        }
+
+        // 复制QQ群号
+        function copyQQNumber() {
+            const qqNumber = document.querySelector('.qq-number').textContent;
+            copyToClipboard(qqNumber, '群号已复制到剪贴板');
+        }
+
+        // 复制邮箱
+        function copyEmail() {
+            const email = document.querySelector('.contact-details p:not(.qq-number)').textContent;
+            copyToClipboard(email, '邮箱已复制到剪贴板');
+        }
+
+        // 通用复制函数
+        function copyToClipboard(text, successMessage) {
+            // 创建临时输入框
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+
+            // 选择并复制
+            tempInput.select();
+            document.execCommand('copy');
+
+            // 移除临时输入框
+            document.body.removeChild(tempInput);
+
+            // 显示成功提示
+            showToast(successMessage);
+        }
+
+        // 显示提示消息
+        function showToast(message) {
+            // 检查是否已有toast
+            let toast = document.querySelector('.toast-message');
+
+            if (!toast) {
+                // 创建新的toast
+                toast = document.createElement('div');
+                toast.className = 'toast-message';
+                document.body.appendChild(toast);
+            }
+
+            // 设置消息并显示
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // 放大二维码功能
+        function enlargeQRCode(element) {
+            // 创建放大浮窗
+            const enlargeModal = document.createElement('div');
+            enlargeModal.className = 'qr-enlarge-modal';
+            enlargeModal.innerHTML = `
+                <div class="qr-enlarge-content">
+                    <div class="qr-enlarge-header">
+                        <h3>🔍 QQ群二维码</h3>
+                        <button class="qr-enlarge-close" onclick="closeQREnlarge()">&times;</button>
+                    </div>
+                    <div class="qr-enlarge-body">
+                        <div class="qr-enlarge-image">
+                            ${element.outerHTML}
+                        </div>
+                        <div class="qr-enlarge-info">
+                            <p><strong>群号：</strong>1057464388</p>
+                            <p><strong>群名：</strong>AI提效使用群</p>
+                            <button class="copy-btn" onclick="copyQQNumber(); closeQREnlarge();">
+                                <span>📋</span> 复制群号
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(enlargeModal);
+
+            // 显示浮窗
+            setTimeout(() => {
+                enlargeModal.classList.add('active');
+            }, 10);
+
+            // 阻止背景滚动
+            document.body.style.overflow = 'hidden';
+
+            // 添加ESC键关闭
+            document.addEventListener('keydown', handleQREnlargeEsc);
+
+            // 点击背景关闭
+            enlargeModal.addEventListener('click', function(e) {
+                if (e.target === enlargeModal) {
+                    closeQREnlarge();
+                }
+            });
+        }
+
+        function closeQREnlarge() {
+            const modal = document.querySelector('.qr-enlarge-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    document.body.removeChild(modal);
+                }, 300);
+
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+
+                // 移除事件监听器
+                document.removeEventListener('keydown', handleQREnlargeEsc);
+            }
+        }
+
+        function handleQREnlargeEsc(e) {
+            if (e.key === 'Escape') {
+                closeQREnlarge();
+            }
+        }
+
+        // 添加联系我们点击事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactLinks = document.querySelectorAll('a[href="#contact"]');
+            contactLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openContactModal();
+                });
+            });
+        });
+    </script>
+
+    <style>
+        /* Toast消息样式 */
+        .toast-message {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 16px 28px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            z-index: 10001;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-message::before {
+            content: '✅';
+            font-size: 1rem;
+        }
+
+        .toast-message.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-message.show {
+            animation: toastSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes toastSlideIn {
+            0% {
+                transform: translateX(-50%) translateY(100px) scale(0.8);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 二维码放大浮窗样式 */
+        .qr-enlarge-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10002;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .qr-enlarge-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .qr-enlarge-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        .qr-enlarge-modal.active .qr-enlarge-content {
+            transform: scale(1);
+        }
+
+        .qr-enlarge-header {
+            padding: 25px 30px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 24px 24px 0 0;
+        }
+
+        .qr-enlarge-header h3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .qr-enlarge-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .qr-enlarge-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .qr-enlarge-body {
+            padding: 30px;
+            text-align: center;
+        }
+
+        .qr-enlarge-image {
+            margin-bottom: 25px;
+        }
+
+        .qr-enlarge-image .qr-code-placeholder,
+        .qr-enlarge-image .qr-code-image {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            cursor: default;
+        }
+
+        .qr-enlarge-image .qr-click-hint {
+            display: none;
+        }
+
+        .qr-enlarge-info {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .qr-enlarge-info p {
+            margin: 8px 0;
+            font-size: 1rem;
+            color: #1e293b;
+        }
+
+        .qr-enlarge-info .copy-btn {
+            margin-top: 15px;
+        }
+    </style>
+</body>
+</html>

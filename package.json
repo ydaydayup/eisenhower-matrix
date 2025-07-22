@@ -1,12 +1,12 @@
 {
-  "name": "ai-efficiency",
-  "version": "0.1.0",
+  "name": "aitixiao",
+  "version": "1.0.0",
   "private": true,
   "main": "./dist/main.cjs",
   "description": "AI提效工具应用",
   "author": {
-    "name": "Your Name",
-    "email": "your.email@example.com"
+    "name": "CXCH",
+    "email": "707495862@qq.com"
   },
   "scripts": {
     "dev": "next dev -p 30011",

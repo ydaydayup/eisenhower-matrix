@@ -1,13 +1,14 @@
 import path from 'path';
 import { app,dialog, BrowserWindow, Menu, protocol,Notification, session, ipcMain, Tray, nativeImage } from 'electron';
 import { createHandler } from 'next-electron-rsc';
-// Register protocols before app is ready
+
 let mainWindow;
 let tray = null;
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 process.env['ELECTRON_ENABLE_LOGGING'] = 'true';
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
+
 // ⬇ Next.js handler ⬇
 // change to your path, make sure it's added to Electron Builder files
 const appPath = app.getAppPath();
@@ -29,27 +30,6 @@ let stopIntercept;
 const createWindow = async () => {
     // 根据环境选择正确的预加载脚本路径
     let preloadPath;
-    // 尝试多个可能的路径
-    // const possiblePaths = [
-    //     path.join(app.getAppPath(), 'preload', 'preload.js'),
-    //     path.join(process.resourcesPath, 'app', 'preload', 'preload.js'),
-    //     path.join(process.resourcesPath, 'preload', 'preload.js'),
-    //     path.join(__dirname, 'preload', 'preload.js'),
-    //     path.join(__dirname, '..', 'preload', 'preload.js')
-    // ];
-    //
-    // // 检查哪个路径存在
-    // for (const testPath of possiblePaths) {
-    //     try {
-    //         if (existsSync(testPath)) {
-    //             preloadPath = testPath;
-    //             
-    //             break;
-    //         }
-    //     } catch (err) {
-    //         
-    //     }
-    // }
     if (!preloadPath) {
         preloadPath = path.join(app.getAppPath(), 'preload', 'preload.js');
     };
@@ -57,6 +37,7 @@ const createWindow = async () => {
     mainWindow = new BrowserWindow({
         width: 1600,
         height: 800,
+        title: 'AI提效', // 明确设置窗口标题
         frame: true, // 使用原生标题栏
         titleBarStyle: 'default', // 使用默认标题栏样式
         titleBarOverlay: {
@@ -64,7 +45,7 @@ const createWindow = async () => {
             symbolColor: '#444444',
             height: 30
         },
-        icon: path.join(app.getAppPath(), 'public', 'icons', 'icon-512x512.png'),
+        icon: path.join(app.getAppPath(), 'public', 'icons', 'icon.ico'),
         webPreferences: {
             contextIsolation: true, // protect against prototype pollution
             devTools: true,
@@ -72,6 +53,10 @@ const createWindow = async () => {
             nodeIntegration: false, // 禁用Node集成，增强安全性
         },
     });
+    
+    // 确保窗口标题是中文
+    mainWindow.setTitle('AI提效');
+    
     // mainWindow.webContents.openDevTools();
     // 隐藏菜单栏
     mainWindow.setMenuBarVisibility(false);
@@ -104,17 +89,18 @@ const createWindow = async () => {
     // Should be last, after all listeners and menu
     await app.whenReady();
     try {
+        // 尝试先使用本地服务器
         await mainWindow.loadURL(localhostUrl + '/');
     } catch (error) {
-        // 显示错误信息页面
-        mainWindow.loadURL(`data:text/html,<html><body><h2>加载失败</h2><p>${error.message}</p></body></html>`);
-    }
-};
+
+            mainWindow.loadURL(`data:text/html,<html><body><h2>加载失败</h2><p>${error.message}</p></body></html>`);
+        }
+    };
 // 创建系统托盘图标和菜单
 function createTray() {
     try {
-        // 加载应用图标 - 使用 icon-512x512.png 而不是 icon-64x64.png
-        const iconPath = path.join(app.getAppPath(), 'public', 'icons', 'icon-512x512.png');
+        // 加载应用图标
+        const iconPath = path.join(app.getAppPath(), 'public', 'icons', 'icon.ico');
         const icon = nativeImage.createFromPath(iconPath);
         // 创建托盘图标
         tray = new Tray(icon);
@@ -319,6 +305,10 @@ ipcMain.on('set-pin-status', (event, isPinned) => {
 });
 // 确保在app ready之前注册协议
 app.on('ready', () => {
+    // 注释掉所有app.setName和app.setAppUserModelId调用
+    // 完全依赖package.json和electron-builder.yml中的配置
+    // 这样可以确保不会干扰页面加载
+
     createWindow();
     // 启动状态广播
     startStatusBroadcast();
@@ -359,7 +349,7 @@ app.on('ready', () => {
                 body: body || '您有一个待办事项需要处理',
                 urgency: urgency || 'normal', // 可以是 'normal', 'critical', 或 'low'
                 silent: false, // 是否有声音
-                icon: path.join(app.getAppPath(), 'public', 'icons', 'icon-512x512.png')
+                icon: path.join(app.getAppPath(), 'public', 'icons', 'icon.ico')
             });
             // 点击通知时聚焦应用
             notification.on('click', () => {

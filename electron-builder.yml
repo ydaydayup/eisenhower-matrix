@@ -7,7 +7,7 @@ files:
   - preload/**/*
   - public/icons/**/*
   - from: '.next/standalone/'
-    to: '.next/standalone/'
+    to: '.next/standalone/' 
   - from: 'node_modules/next-electron-rsc/'
     to: 'node_modules/next-electron-rsc/'
   - from: 'node_modules/electron-serve/'
@@ -22,45 +22,53 @@ extraResources:
   - from: "node_modules/next-electron-rsc/"
     to: "app/node_modules/next-electron-rsc/"
 asar: true
-publish:
-  - provider: github
 asarUnpack:
   - "node_modules/next-electron-rsc/**/*"
 compression: normal
 directories:
   output: dist
-  buildResources: public/icons
+  buildResources: ./public/icons  # 构建资源  
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
   cache: ./electron-cache
 win:
-  target: nsis
-#   icon: "./public/icons/icon-5512x512.ico"
-  icon: ./public/favicon.ico
-  signAndEditExecutable: false
-
+  target: nsis 
+  icon: "./public/icons/icon.ico"   # 应用程序图标
+  executableName: "AI提效"           # 可执行文件名称
+  requestedExecutionLevel: "asInvoker"    # 执行级别
+  signAndEditExecutable: true   # 签名和编辑可执行文件
+  fileAssociations:      # 文件关联
+    - ext: "ai"   # 文件扩展名
+      name: "AI提效文件"   # 文件类型名称
+      description: "AI提效应用程序文件"   # 文件描述
+      icon: "./public/icons/icon.ico"  # 文件关联图标
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   perMachine: false
-  createDesktopShortcut: true
+  createDesktopShortcut: true     
   createStartMenuShortcut: true
-  shortcutName: "AI提效"
-  menuCategory: "AI工具"
-  installerIcon: ./public/favicon.ico
-#   installerIcon: ./public/icons/icon.png
+  allowElevation: false
+  shortcutName: "AI提效"    # 桌面快捷方式名称
+  menuCategory: "AI提效"    # 开始菜单分类
+  artifactName: "AI提效安装程序.${ext}"  # 安装程序名称
+  uninstallDisplayName: "卸载AI提效"   # 卸载程序显示的名称
+  # 添加快捷方式图标设置
+  installerIcon: "./public/icons/icon.ico"  # 安装程序图标
+
+
 mac:
   target: dmg
-  icon: "icon.png"
+  icon: "./public/icons/icon.png"
 linux:
   target: AppImage
-  icon: "icon-512x512.png"
+  icon: "./public/icons/icon.png"
   category: Utility
   maintainer: "Your Name <your.email@example.com>"
   artifactName: "${productName}-${version}.${ext}"
   desktop:
     entry:
       Name: "AI提效"
-      Comment: "AI效率提升工具"
+      Comment: "AI提效"
       Type: "Application"
       Categories: "Utility;"
