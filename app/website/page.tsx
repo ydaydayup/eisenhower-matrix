@@ -1,7 +1,66 @@
 "use client"
-import React from "react"
+import React, { useState } from "react"
 
 export default function WebsitePage() {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
+  const [showToast, setShowToast] = useState(false)
+
+  const openContactModal = () => {
+    setIsContactModalOpen(true)
+    document.body.style.overflow = 'hidden'
+  }
+
+  const closeContactModal = () => {
+    setIsContactModalOpen(false)
+    document.body.style.overflow = ''
+  }
+
+  const copyToClipboard = async (text: string, successMessage: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setToastMessage(successMessage)
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = text
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setToastMessage(successMessage)
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
+  }
+
+  const copyQQNumber = () => {
+    copyToClipboard('1057464388', '群号已复制到剪贴板')
+  }
+
+  const copyEmail = () => {
+    copyToClipboard('707495862@qq.com', '邮箱已复制到剪贴板')
+  }
+
+  // Handle ESC key to close modal
+  React.useEffect(() => {
+    const handleEscKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isContactModalOpen) {
+        closeContactModal()
+      }
+    }
+
+    if (isContactModalOpen) {
+      document.addEventListener('keydown', handleEscKey)
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [isContactModalOpen])
+
   return (
     <>
       {/* 导航栏 */}
@@ -135,7 +194,7 @@ export default function WebsitePage() {
               <div className="text-4xl mb-4">🪟</div>
               <h3 className="text-xl font-semibold mb-2">Windows</h3>
               <p className="mb-4">支持 Windows 10/11</p>
-              <a href="https://github.com/ydaydayup/eisenhower-matrix/releases" className="inline-flex items-center gap-2 bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow hover:-translate-y-1 hover:shadow-xl transition-all mb-3">
+              <a href="https://share.weiyun.com/BdvButcJ" className="inline-flex items-center gap-2 bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow hover:-translate-y-1 hover:shadow-xl transition-all mb-3">
                 <span>📥</span> 下载 Windows 版
               </a>
               <div className="text-xs opacity-70">版本 1.0.0 | 约 150MB</div>
@@ -173,6 +232,125 @@ export default function WebsitePage() {
           {/*</div>*/}
         </div>
       </section>
+
+      {/* 页脚 */}
+      <footer className="bg-slate-800 text-white py-16">
+        <div className="max-w-6xl mx-auto px-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mb-10">
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <img src="/icons/icon-192x192.png" alt="AI提效" className="w-8 h-8 mr-3" />
+                <span className="text-xl font-semibold">AI提效</span>
+              </div>
+              <p className="text-slate-300">智能任务管理，让效率提升看得见</p>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-slate-200">产品</h4>
+              <ul className="space-y-2">
+                <li><a href="#features" className="text-slate-300 hover:text-white transition">功能特性</a></li>
+                <li><a href="#download" className="text-slate-300 hover:text-white transition">下载应用</a></li>
+                <li><a href="#screenshots" className="text-slate-300 hover:text-white transition">界面预览</a></li>
+              </ul>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-slate-200">支持</h4>
+              <ul className="space-y-2">
+                <li>
+                  <button 
+                    onClick={openContactModal}
+                    className="text-slate-300 hover:text-white transition text-left"
+                  >
+                    联系我们
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-700 pt-8 text-center">
+            <p className="text-slate-400 text-sm">
+              &copy; 2025 AI提效. 保留所有权利.
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      {/* 联系我们浮窗 */}
+      {isContactModalOpen && (
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[10000] transition-all duration-300"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeContactModal()
+          }}
+        >
+          <div className="bg-white rounded-3xl max-w-lg w-[92%] max-h-[90vh] overflow-y-auto shadow-2xl transform transition-all duration-300">
+            {/* 模态框头部 */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-8 rounded-t-3xl flex justify-between items-center">
+              <h3 className="text-xl font-bold flex items-center gap-3">
+                <span>💬</span>
+                联系我们
+              </h3>
+              <button 
+                onClick={closeContactModal}
+                className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full transition-all hover:rotate-90"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 模态框内容 */}
+            <div className="p-8 space-y-6">
+              {/* QQ交流群 */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-all">
+                <div className="space-y-4">
+                  <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span>🎯</span>
+                    QQ交流群
+                  </h4>
+                  <p className="text-3xl font-bold text-indigo-600 font-mono">1057464388</p>
+                  <button 
+                    onClick={copyQQNumber}
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <span>📋</span>
+                    复制群号
+                  </button>
+                </div>
+              </div>
+
+              {/* 邮箱联系 */}
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-all">
+                <div className="space-y-4">
+                  <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span>✉️</span>
+                    邮箱联系
+                  </h4>
+                  <p className="text-lg text-slate-700">707495862@qq.com</p>
+                  <button 
+                    onClick={copyEmail}
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+                  >
+                    <span>📋</span>
+                    复制邮箱
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast 提示 */}
+      {showToast && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-full shadow-lg z-[10001] flex items-center gap-2 animate-bounce">
+          <span>✅</span>
+          {toastMessage}
+        </div>
+      )}
     </>
   )
 } 
